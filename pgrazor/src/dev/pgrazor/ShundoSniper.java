@@ -89,7 +89,7 @@ public final class ShundoSniper {
     // game restart does not check live spawns twice.
     private static final Map<String, Long> attempted = new LinkedHashMap<>();
     static final long TRIED_GRACE_MS = 5 * 60_000, TRIED_UNKNOWN_MS = 60 * 60_000;
-    static final String TRIED_FILE = "shundo-tried.txt";
+    static final String TRIED_FILE = "pgsavant-shundo-tried.txt";
     private static boolean triedLoaded;
     private static final ArrayDeque<String> recent = new ArrayDeque<>();
     private static int checked, shinies, caught, teleports, missed;
