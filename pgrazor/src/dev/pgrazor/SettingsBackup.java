@@ -16,7 +16,7 @@ import org.json.*;
 /** User-selected, bounded backups. Never enumerates account or game storage. */
 final class SettingsBackup {
     private static final int EXPORT=71, IMPORT=72, LIMIT=512*1024;
-    private static final String[] SCOPES={"pgrazor-map","pgrazor-overlays","pgrazor-saved-places-v1","pgrazor-livefeed"};
+    private static final String[] SCOPES={"pgsavant-map","pgsavant-overlays","pgsavant-saved-places-v1","pgsavant-livefeed"};
     private static final String[][] KEYS={{"Stops","Gyms","Raids"},{"cooldown.fx","cooldown.fy","vgp.fx","vgp.fy","transfer.fx","transfer.fy","gym-feed.fx","gym-feed.fy","local-time.fx","local-time.fy"},{"places"},{"category","radius","minIv","myShinies","filters_v1","filter_presets_v1"}};
     private final Activity activity;
     private TextView status;
@@ -41,7 +41,7 @@ final class SettingsBackup {
             dialog.setCancelable(false);dialog.show();
         }else activity.setContentView(scroll);
     }
-    private File rootedFile(){File dir=activity.getExternalFilesDir(null);return dir==null?null:new File(dir,"PGRazor-settings.json");}
+    private File rootedFile(){File dir=activity.getExternalFilesDir(null);return dir==null?null:new File(dir,"PGSavant-settings.json");}
     private void pick(int code){
         if(PgAssets.rooted()){
             File file=rootedFile();
@@ -52,7 +52,7 @@ final class SettingsBackup {
             return;
         }
         Intent i=new Intent(code==EXPORT?Intent.ACTION_CREATE_DOCUMENT:Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json");
-        if(code==EXPORT)i.putExtra(Intent.EXTRA_TITLE,"PGRazor-settings.json");
+        if(code==EXPORT)i.putExtra(Intent.EXTRA_TITLE,"PGSavant-settings.json");
         try{activity.startActivityForResult(i,code);}catch(android.content.ActivityNotFoundException e){status.setText("No file picker is available.");}
     }
     void result(int request,int result,Intent data){
@@ -79,7 +79,7 @@ final class SettingsBackup {
                 }
             }catch(Exception e){message="Backup failed: "+(e.getMessage()==null?"Invalid file or storage unavailable":e.getMessage());}
             final String text=message;activity.runOnUiThread(()->{busy=false;if(activity.isFinishing()||activity.isDestroyed())return;status.setText(text);export.setEnabled(true);restore.setEnabled(true);back.setEnabled(true);});
-        },"pgrazor-settings-backup").start();
+        },"pgsavant-settings-backup").start();
     }
     boolean isBusy(){return busy;}
     private static synchronized JSONObject snapshot(Context context)throws Exception{
@@ -96,7 +96,7 @@ final class SettingsBackup {
         for(String key:keys)if(data.has(key)){
             Object value=data.get(key);
             if(value instanceof Boolean)edit.putBoolean(key,(Boolean)value);
-            else if(value instanceof Number){if(scope.equals("pgrazor-overlays"))edit.putFloat(key,((Number)value).floatValue());else edit.putInt(key,((Number)value).intValue());}
+            else if(value instanceof Number){if(scope.equals("pgsavant-overlays"))edit.putFloat(key,((Number)value).floatValue());else edit.putInt(key,((Number)value).intValue());}
             else edit.putString(key,(String)value);
         }if(!edit.commit())throw new IOException("Could not save settings");
     }

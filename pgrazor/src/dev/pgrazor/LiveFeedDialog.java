@@ -82,7 +82,7 @@ public final class LiveFeedDialog {
         private final SharedPreferences prefs;
         private final Handler main = new Handler(Looper.getMainLooper());
         private final ExecutorService net = Executors.newSingleThreadExecutor(task -> {
-            Thread t = new Thread(task, "pgrazor-livefeed"); t.setDaemon(true); return t;
+            Thread t = new Thread(task, "pgsavant-livefeed"); t.setDaemon(true); return t;
         });
         private final LiveFeedClient client;
         private final LiveFeedIcons icons;
@@ -112,7 +112,7 @@ public final class LiveFeedDialog {
 
         Controller(Activity activity, Context ui, AlertDialog dialog, LinearLayout root) {
             this.activity = activity; this.ui = ui; this.dialog = dialog; this.root = root;
-            prefs = AccountProfiles.preferences(activity,"pgrazor-livefeed");
+            prefs = AccountProfiles.preferences(activity,"pgsavant-livefeed");
             categoryIndex = clamp(prefs.getInt("category", 0), 0, CATEGORIES.length - 1);
             radiusIndex = clamp(prefs.getInt("radius", 1), 0, RADII.length - 1);
             filters = loadFilters();

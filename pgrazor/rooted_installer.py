@@ -22,7 +22,7 @@ import nonroot
 
 ROOT = Path(__file__).resolve().parent
 INSTALLER_DIR = ROOT / 'root-installer'
-PACKAGE = 'dev.pgrazor.root'
+PACKAGE = 'com.arevj.pgsavant'
 # Classes that must exist after compilation; a missing one means javac silently skipped sources.
 EXPECTED_CLASSES = ('InstallerActivity', 'RestartActivity', 'RootShell', 'RootStatus', 'InstallerConfig')
 
@@ -141,7 +141,7 @@ def build_installer(module_zip, target, version, folder):
 
     aligned = folder / 'installer-aligned.apk'
     build.run(build.TOOLS / 'zipalign.exe', '-f', '4', unsigned, aligned)
-    apk = folder / ('PGRazor-Root-' + version + '.apk')
+    apk = folder / ('PGSavant-Root-' + version + '.apk')
     build.run(build.TOOLS / 'apksigner.bat', 'sign', *build.signing_args(), '--out', apk, aligned)
     build.run(build.TOOLS / 'apksigner.bat', 'verify', apk)
     print('Installer APK:', apk, flush=True)
@@ -163,7 +163,7 @@ def main(argv=None):
         target = {'package': 'com.nianticlabs.pokemongo', 'versionCode': profile['version_code'],
                   'versionName': profile['game_version']}
         with tempfile.TemporaryDirectory(prefix='pgrazor-installer-check-') as folder:
-            compile_sources(target, build.release_version(ROOT), folder, 'PGRazor-Root-module.zip')
+            compile_sources(target, build.release_version(ROOT), folder, 'PGSavant-Root-module.zip')
         return
     if not args.report:
         parser.error('report is required unless --check is supplied')

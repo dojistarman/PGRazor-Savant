@@ -147,7 +147,7 @@ public final class AutoRaidDialog {
                 names[0] = loaded;
                 update.run();
             });
-        }, "pgrazor-raid-names").start();
+        }, "pgsavant-raid-names").start();
     }
 
     /** Persists the current draft through the controller, reporting any rejection without changing it. */

@@ -310,7 +310,7 @@ public final class GpxRouteDialog {
 
     /** One bounded off-main worker per operation; the codec/store cap the stream, so each run is short. */
     private static void run(Runnable io) {
-        Thread thread = new Thread(io, "pgrazor-gpx-io");
+        Thread thread = new Thread(io, "pgsavant-gpx-io");
         thread.setDaemon(true);
         thread.start();
     }

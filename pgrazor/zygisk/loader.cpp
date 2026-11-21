@@ -13,6 +13,7 @@
 // The flag is read once per process start, so flipping it only takes effect at
 // the game's next cold start -- no reboot and no module toggle in the manager.
 #include <android/log.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <jni.h>
 #include <stdlib.h>
@@ -21,8 +22,9 @@
 #include <unistd.h>
 
 #include "zygisk.hpp"
+#include "coexistence.h"
 
-#define TAG "PGRazor-zygisk"
+#define TAG "PGSavant-zygisk"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 
@@ -103,7 +105,24 @@ public:
         }
         int dir = api_->getModuleDir();
         if (dir >= 0 && faccessat(dir, "pgrazor/injection-off", F_OK, 0) == 0) {
-            LOGI("PGRazor switched off (pgrazor/injection-off present); skipping injection for this launch");
+            LOGI("PGSavant is Off; skipping injection for this launch");
+            target_ = false;
+            return;
+        }
+        if (dir < 0 || errno != ENOENT) {
+            LOGE("PGSavant launch-switch state is unreadable; skipping injection");
+            target_ = false;
+            return;
+        }
+        if (!pgsavant::original_allows_injection([](const char *path) {
+            struct stat st{};
+            if (lstat(path, &st) != 0)
+                return errno == ENOENT ? pgsavant::PathState::missing : pgsavant::PathState::unknown;
+            if (S_ISREG(st.st_mode)) return pgsavant::PathState::file;
+            if (S_ISDIR(st.st_mode)) return pgsavant::PathState::directory;
+            return pgsavant::PathState::unknown;
+        })) {
+            LOGE("Original PGRazor is On or its state is unknown; PGSavant stays off");
             target_ = false;
             return;
         }

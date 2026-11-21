@@ -227,7 +227,7 @@ public final class MapSearchDialog {
             final PlaceSearchClient c = client;
             if (c != null) {
                 // close() may touch network/IO, so keep it off the main thread.
-                new Thread(() -> { try { c.close(); } catch (Throwable ignored) {} }, "pgrazor-place-search-close").start();
+                new Thread(() -> { try { c.close(); } catch (Throwable ignored) {} }, "pgsavant-place-search-close").start();
             }
         }
     }

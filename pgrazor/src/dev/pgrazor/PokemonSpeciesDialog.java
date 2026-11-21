@@ -261,7 +261,7 @@ final class PokemonSpeciesDialog {
                     names = result;
                     refreshShown(); // name search and category labels now resolve
                 });
-            }, "pgrazor-species-names").start();
+            }, "pgsavant-species-names").start();
         }
 
         private String name(int id) {

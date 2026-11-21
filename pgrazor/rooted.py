@@ -29,8 +29,8 @@ import runtime_assets
 ROOT = Path(__file__).resolve().parent
 ABIS = ['arm64-v8a', 'x86_64']
 TRIPLES = {'arm64-v8a': 'aarch64-linux-android28', 'x86_64': 'x86_64-linux-android28'}
-MODULE_ID = 'pgrazor'
-INSTALLER_PACKAGE = 'dev.pgrazor.root'
+MODULE_ID = 'pgsavant'
+INSTALLER_PACKAGE = 'com.arevj.pgsavant'
 
 UPDATE_BINARY = '''#!/sbin/sh
 # Standard Magisk module installer (KernelSU and APatch install modules without it).
@@ -57,30 +57,29 @@ exit 0
 # presence to tell a toggle-aware module from an older one.
 TOGGLE_CAPABILITY = 'pgrazor/toggle-v1'
 
-# Soft-off flag the installer writes/removes in the live module. It is never shipped in the
-# package (a fresh install defaults to On); it only ever exists because a user turned PGRazor off.
+# Soft-off flag the installer writes/removes in the derivative's live module.
+# A fresh PGSavant install ships this flag: activation is always explicit.
 INJECTION_OFF_FLAG = 'pgrazor/injection-off'
 
 # Sourced by the root manager (Magisk / KernelSU / APatch) during install, after the zip is
 # unpacked into the staging directory $MODPATH. A module update replaces the whole module tree,
 # which would silently turn injection back On; this carries the user's Off choice forward from the
 # currently-installed (live) module. If it cannot preserve a known-off state it aborts the install
-# rather than silently re-enabling. A fresh install ships no flag, so injection defaults to On. The
+# rather than silently re-enabling. A fresh install defaults to Off. The
 # same script runs whether the update is installed straight through the root manager or by the APK.
 CUSTOMIZE_SH = '''#!/system/bin/sh
-# PGRazor Root install customizer: preserve the user's PGRazor: On / Off choice across updates.
-LIVE_FLAG="/data/adb/modules/pgrazor/''' + INJECTION_OFF_FLAG + '''"
+# A new PGSavant module starts Off. Only a previously installed, explicitly On
+# derivative may retain On. Never inspect or change original PGRazor's settings.
+LIVE="/data/adb/modules/pgsavant"
+LIVE_FLAG="${LIVE}/''' + INJECTION_OFF_FLAG + '''"
 STAGED_FLAG="${MODPATH}/''' + INJECTION_OFF_FLAG + '''"
-
-# The live module is the source of truth for the current switch state. Staging dirs are wiped and
-# re-extracted by the manager before this runs, so an earlier staged flag cannot be read here.
-if [ -e "${LIVE_FLAG}" ]; then
-  ui_print "- PGRazor is switched Off on this device; keeping it Off after this update."
-  mkdir -p "${MODPATH}/pgrazor" || abort "! Cannot preserve the PGRazor Off switch (mkdir failed); aborting instead of silently re-enabling PGRazor."
+if [ ! -f "${LIVE}/module.prop" ] || [ -e "${LIVE_FLAG}" ]; then
+  ui_print "- PGSavant will remain Off until explicitly enabled."
+  mkdir -p "${MODPATH}/pgrazor" || abort "! Cannot preserve PGSavant Off (mkdir failed)."
   : > "${STAGED_FLAG}" 2>/dev/null
-  [ -f "${STAGED_FLAG}" ] || abort "! Cannot preserve the PGRazor Off switch; aborting instead of silently re-enabling PGRazor."
+  [ -f "${STAGED_FLAG}" ] || abort "! Cannot preserve PGSavant Off."
 else
-  rm -f "${STAGED_FLAG}" || abort "! Cannot preserve the PGRazor On switch."
+  rm -f "${STAGED_FLAG}" || abort "! Cannot preserve PGSavant On."
 fi
 '''
 
@@ -88,7 +87,7 @@ fi
 def capability_module_entries():
     """Static module entries for the launch-time On/Off switch: the install-time preservation
     script and the empty capability marker. Merged into the packaged module by `package()`."""
-    return {'customize.sh': CUSTOMIZE_SH, TOGGLE_CAPABILITY: b''}
+    return {'customize.sh': CUSTOMIZE_SH, TOGGLE_CAPABILITY: b'', INJECTION_OFF_FLAG: b''}
 
 
 def compiled_mode(abis):
@@ -214,9 +213,9 @@ def package(source, download=False, installer=True):
     payload = write_zip(folder / 'payload.zip', assets, zipfile.ZIP_STORED)
 
     module = {
-        'module.prop': '\n'.join([f'id={MODULE_ID}', 'name=PGRazor Root', f'version={version}',
+        'module.prop': '\n'.join([f'id={MODULE_ID}', 'name=PGSavant', f'version={version}',
                                   f'versionCode={version_code(version)}', 'author=PGRazor',
-                                  f'description=PGRazor for the official Pokémon GO app ({target["versionName"]}). Requires Zygisk.', '']),
+                                  f'description=PGSavant (PGRazor derivative) for the official Pokémon GO app ({target["versionName"]}). Requires Zygisk.', '']),
         'META-INF/com/google/android/update-binary': UPDATE_BINARY,
         'META-INF/com/google/android/updater-script': '#MAGISK\n',
         'pgrazor/classes.dex': Path(dex),
@@ -224,7 +223,7 @@ def package(source, download=False, installer=True):
     }
     module.update(capability_module_entries())
     for abi in ABIS: module[f'zygisk/{abi}.so'] = build_loader(abi, folder / f'loader-{abi}.so')
-    module_zip = write_zip(folder / f'PGRazor-Root-module-{version}.zip', module)
+    module_zip = write_zip(folder / f'PGSavant-Root-module-{version}.zip', module)
 
     report = {'version': version, 'target': target, 'module': str(module_zip), 'module_sha256': runtime_assets.sha256(module_zip),
               'dex_sha256': runtime_assets.sha256(dex), 'payload_sha256': runtime_assets.sha256(payload),
@@ -259,15 +258,15 @@ def main(argv=None):
     report, _ = package(args.source, download=args.download, installer=not args.module_only)
     if args.output:
         args.output.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(report['installer'], args.output / 'PGRazor-Root.apk')
-        shutil.copyfile(report['module'], args.output / 'PGRazor-Root-module.zip')
+        shutil.copyfile(report['installer'], args.output / 'PGSavant-Root.apk')
+        shutil.copyfile(report['module'], args.output / 'PGSavant-Root-module.zip')
         public = {key: report[key] for key in ('version', 'target', 'module_sha256', 'installer_sha256', 'abis')}
         (args.output / 'root-build-info.json').write_text(json.dumps(public, indent=2) + '\n', encoding='utf-8')
         sums = args.output / 'SHA256SUMS.txt'
         lines = sums.read_text(encoding='utf-8').splitlines() if sums.exists() else []
-        lines = [line for line in lines if not line.endswith(('  PGRazor-Root.apk', '  PGRazor-Root-module.zip'))]
-        lines.append(report['installer_sha256'] + '  PGRazor-Root.apk')
-        lines.append(report['module_sha256'] + '  PGRazor-Root-module.zip')
+        lines = [line for line in lines if not line.endswith(('  PGSavant-Root.apk', '  PGSavant-Root-module.zip'))]
+        lines.append(report['installer_sha256'] + '  PGSavant-Root.apk')
+        lines.append(report['module_sha256'] + '  PGSavant-Root-module.zip')
         sums.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
 

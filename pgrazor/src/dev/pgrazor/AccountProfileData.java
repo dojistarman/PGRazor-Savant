@@ -9,8 +9,8 @@ import java.util.List;
 
 /** Removes only an inactive profile's PGRazor data, never game or shared feed credentials. */
 final class AccountProfileData {
-    private static final String[] FILES={"pgrazor-location-state-v1.txt","pgrazor-settings-v1.properties","cooldown-history.txt","pgrazor-gpx-routes-v1"};
-    private static final String[] PREFS={"pgrazor-map","pgrazor-overlays","pgrazor-saved-places-v1","pgrazor-livefeed"};
+    private static final String[] FILES={"pgsavant-location-state-v1.txt","pgsavant-settings-v1.properties","pgsavant-cooldown-history.txt","pgsavant-gpx-routes-v1"};
+    private static final String[] PREFS={"pgsavant-map","pgsavant-overlays","pgsavant-saved-places-v1","pgsavant-livefeed"};
     static void delete(AccountProfileStore store,File files,File sharedPrefs,String id) throws IOException {
         store.requireRemovable(id);
         File fileRoot=files.getCanonicalFile(),prefRoot=sharedPrefs.getCanonicalFile();
@@ -18,7 +18,7 @@ final class AccountProfileData {
         if(AccountProfileStore.DEFAULT_ID.equals(id)){
             for(String name:FILES)for(String suffix:new String[]{"",".bak",".new"})collect(fileRoot,new File(fileRoot,name+suffix),targets,0);
         }else{
-            collect(fileRoot,new File(new File(new File(fileRoot,"pgrazor-accounts-v1"),"profiles"),id),targets,0);
+            collect(fileRoot,new File(new File(new File(fileRoot,"pgsavant-accounts-v1"),"profiles"),id),targets,0);
         }
         for(String scope:PREFS)for(String suffix:new String[]{".xml",".xml.bak"}){
             collect(prefRoot,new File(prefRoot,store.preferenceName(id,scope)+suffix),targets,0);

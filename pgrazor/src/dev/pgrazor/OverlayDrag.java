@@ -18,7 +18,7 @@ import android.view.ViewGroup;
  * and flipped above when there is no room, so the button and its pill stay coherent.
  */
 public final class OverlayDrag implements View.OnTouchListener {
-    private static final String PREFS = "pgrazor-overlays";
+    private static final String PREFS = "pgsavant-overlays";
     private final ViewGroup parent;
     private final View view;
     private final View follower;

@@ -98,7 +98,7 @@ public final class QuickLocationDialogs {
                 show(activity,ChoiceList.attach(b.create(),names,which -> TeleportDialog.confirm(activity,snap.entries.get(which).latitude,snap.entries.get(which).longitude,target::teleport)));
                 if (snap.damaged) Toast.makeText(activity, "Some saved places could not be read. Valid entries are shown.", Toast.LENGTH_LONG).show();
             });
-        }, "pgrazor-favorites-read").start();
+        }, "pgsavant-favorites-read").start();
     }
 
     private static void show(Activity activity,AlertDialog dialog){
@@ -135,7 +135,7 @@ public final class QuickLocationDialogs {
                     dialog.dismiss();
                     Toast.makeText(activity, "Saved " + entry.name + " to Favorites", Toast.LENGTH_SHORT).show();
                 });
-            }, "pgrazor-favorites-save").start();
+            }, "pgsavant-favorites-save").start();
         }));
         show(activity, dialog);
     }

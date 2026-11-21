@@ -3,7 +3,7 @@ package dev.pgrazor.root;
 import java.util.Map;
 
 /**
- * Pure interpretation of the PGRazor module's installed state and on/off switch, derived from the
+ * Pure interpretation of the PGSavant module's installed state and on/off switch, derived from the
  * parsed root probe. Holds no Android dependency, so {@link #parse} and the derived flags/label run
  * on a plain JVM and can be exercised without a device.
  *
@@ -15,13 +15,13 @@ import java.util.Map;
  */
 final class RootModuleState {
     static final String PROBE = String.join("\n",
-        "M=/data/adb/modules/pgrazor",
+        "M=/data/adb/modules/pgsavant",
         "[ -f \"$M/module.prop\" ] && echo \"MODVER=$(sed -n 's/^version=//p' \"$M/module.prop\")\"",
         "[ -f \"$M/pgrazor/toggle-v1\" ] && echo MODTOGGLE=1",
         "[ -f \"$M/pgrazor/injection-off\" ] && echo MODOFF=1",
         "[ -f \"$M/disable\" ] && echo MODDISABLED=1",
         "[ -f \"$M/remove\" ] && echo MODREMOVE=1",
-        "[ -d /data/adb/modules_update/pgrazor ] && echo MODPENDING=1",
+        "[ -d /data/adb/modules_update/pgsavant ] && echo MODPENDING=1",
         "true");
     final boolean rooted;
     final boolean installed;        // live module.prop present
@@ -85,7 +85,7 @@ final class RootModuleState {
         } else if (disabled) {
             state = "disabled";
         } else if (toggleSupported) {
-            state = injectionOff ? "PGRazor off (module stays installed)" : "PGRazor on";
+            state = injectionOff ? "PGSavant off (module stays installed)" : "PGSavant on";
         } else {
             state = "update and reboot once to use the on/off switch";
         }

@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * The only screen of the PGRazor Root installer. It shows the device's root/Zygisk/module/game
+ * The only screen of the PGSavant Root installer. It shows the device's root/Zygisk/module/game
  * status honestly, installs the bundled Zygisk module through the detected root manager on an
  * explicit tap, offers a launch-time on/off switch and an always-available reboot button. Detection
  * is read-only; install, switching and reboot require an explicit action. All root work runs off
@@ -50,13 +50,13 @@ public final class InstallerActivity extends Activity {
         screen.setBackgroundColor(Color.rgb(9, 17, 29));
 
         TextView heading = new TextView(this);
-        heading.setText("PGRazor Root installer");
+        heading.setText("PGSavant Root installer");
         heading.setTextSize(24);
         heading.setTextColor(Color.WHITE);
         screen.addView(heading);
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Installs PGRazor into the official Pokémon GO " + InstallerConfig.GAME_VERSION_NAME
+        subtitle.setText("Installs PGSavant into the official Pokémon GO " + InstallerConfig.GAME_VERSION_NAME
             + " as a Zygisk module. The game stays unmodified; changes require your confirmation.");
         subtitle.setTextSize(14);
         subtitle.setTextColor(Color.LTGRAY);
@@ -78,7 +78,7 @@ public final class InstallerActivity extends Activity {
         screen.addView(buttons);
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
-        toggleButton = addButton(actions, "PGRazor: On / Off", v -> confirmToggle());
+        toggleButton = addButton(actions, "PGSavant: On / Off", v -> confirmToggle());
         rebootButton = addButton(actions, "Reboot", v -> confirmReboot());
         toggleButton.setEnabled(false);
         rebootButton.setEnabled(false);
@@ -123,7 +123,7 @@ public final class InstallerActivity extends Activity {
                 status = detected;
                 statusView.setText(detected.describe());
                 if (!detected.rawProbe.isEmpty()) log("Probe:\n" + detected.rawProbe);
-                toggleButton.setText(detected.toggleSupported ? (detected.injectionOff ? "PGRazor: Off" : "PGRazor: On") : "PGRazor: On / Off");
+                toggleButton.setText(detected.toggleSupported ? (detected.injectionOff ? "PGSavant: Off" : "PGSavant: On") : "PGSavant: On / Off");
                 rebootButton.setText(detected.rebootNeeded ? "Reboot to activate" : "Reboot");
                 if (detected.rebootNeeded && !pendingLogged) log("A module change is pending. Reboot to activate it.");
                 pendingLogged = detected.rebootNeeded;
@@ -133,13 +133,13 @@ public final class InstallerActivity extends Activity {
                     log("No supported root manager (needs Magisk 27+, KernelSU or APatch).");
                 } else {
                     if (!"Enabled".equals(detected.zygiskLabel) && !detected.zygiskLabel.startsWith("Enabled (") && !detected.zygiskLabel.startsWith("Configured (")) {
-                        log("Zygisk is required. PGRazor will not load until Zygisk is active: " + detected.zygiskLabel);
+                        log("Zygisk is required. PGSavant will not load until Zygisk is active: " + detected.zygiskLabel);
                     }
                     if (detected.gameInstalled && !detected.gameCertTrusted) {
-                        log("The installed Pokémon GO is not Niantic-signed. Use the official app; PGRazor stays off otherwise.");
+                        log("The installed Pokémon GO is not Niantic-signed. Use the official app; PGSavant stays off otherwise.");
                     } else if (detected.gameInstalled && !detected.gameVersionMatch) {
                         log("Installed game is not " + InstallerConfig.GAME_VERSION_NAME
-                            + ". The module installs, but PGRazor stays off until the versions match.");
+                            + ". The module installs, but PGSavant stays off until the versions match.");
                     } else if (!detected.gameInstalled) {
                         log("Pokémon GO is not installed. The module installs, but there is nothing for it to load into yet.");
                     }
@@ -152,7 +152,7 @@ public final class InstallerActivity extends Activity {
     private void confirmInstall() {
         if (busy || status == null || !status.canInstall()) return;
         new AlertDialog.Builder(this)
-            .setTitle("Install PGRazor Root module?")
+            .setTitle("Install PGSavant Root module?")
             .setMessage("This installs the Zygisk module with " + status.managerLabel
                 + ". The module only loads into the official Pokémon GO and takes effect after a reboot.")
             .setPositiveButton("Install", (dialog, which) -> install())
@@ -200,9 +200,9 @@ public final class InstallerActivity extends Activity {
         if (busy || status == null || !status.canToggle()) return;
         final boolean on = status.injectionOff;
         new AlertDialog.Builder(this)
-            .setTitle(on ? "Turn PGRazor on?" : "Turn PGRazor off?")
-            .setMessage("Pok\u00e9mon GO will be closed. PGRazor will be " + (on ? "on" : "off")
-                + " the next time you open it. No reboot needed.")
+            .setTitle(on ? "Turn PGSavant on?" : "Turn PGSavant off?")
+            .setMessage("Close Pok\u00e9mon GO first. To enable PGSavant, also turn original PGRazor Off in its installer. PGSavant will be " + (on ? "on" : "off")
+                + " the next time you open the game. This does not change original PGRazor. No reboot needed.")
             .setPositiveButton(on ? "Turn on" : "Turn off", (dialog, which) -> setInjection(on))
             .setNegativeButton("Cancel", null).show();
     }
@@ -215,7 +215,7 @@ public final class InstallerActivity extends Activity {
             RootShell.Result result = target.setInjection(on);
             handler.post(() -> {
                 if (!result.output.isEmpty()) log(result.output);
-                if (result.ok()) log("PGRazor is " + (on ? "on" : "off (module stays installed)")
+                if (result.ok()) log("PGSavant is " + (on ? "on" : "off (module stays installed)")
                     + ". Open Pok\u00e9mon GO when ready.");
                 else log(result.timedOut ? "Switch result is unknown; re-checking the module state."
                     : "Could not confirm the change. See the output above.");
@@ -229,7 +229,7 @@ public final class InstallerActivity extends Activity {
         if (busy || status == null || !status.rooted) return;
         new AlertDialog.Builder(this)
             .setTitle("Reboot now?")
-            .setMessage(status.rebootNeeded ? "Zygisk reads its module list only at boot. Reboot to activate the pending PGRazor Root change." : "Reboot this device now? Pok\u00e9mon GO and other apps will close.")
+            .setMessage(status.rebootNeeded ? "Zygisk reads its module list only at boot. Reboot to activate the pending PGSavant Root change." : "Reboot this device now? Pok\u00e9mon GO and other apps will close.")
             .setPositiveButton("Reboot", (dialog, which) -> {
                 if (busy || status == null || !status.rooted) return;
                 setBusy(true);

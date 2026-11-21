@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A read-only snapshot of the device's root solution, Zygisk provider, installed PGRazor module and
+ * A read-only snapshot of the device's root solution, Zygisk provider, installed PGSavant module and
  * the official Pokémon GO install. Everything reported here is observed, never assumed: unknown
  * states are labelled "Unknown" rather than guessed. Detection runs one root shell probe and a
  * PackageManager query; {@link #detect} must be called off the main thread because of the probe.
@@ -169,15 +169,21 @@ final class RootStatus {
     private static final long TOGGLE_TIMEOUT = 20000;
 
     /**
-     * Turns PGRazor injection on (remove the live {@code injection-off} flag) or off (create it) in
+     * Turns PGSavant injection on (remove the live {@code injection-off} flag) or off (create it) in
      * one bounded su command. The command re-validates the live marker and the no-disable/no-remove
      * state, writes the flag in the live and (if present) the staged module, verifies the final state,
-     * force-stops the game only after successful writes, and echoes an explicit OK/FAIL token — so a
-     * partial failure never looks like success. The module stays installed either way. Off-main-thread.
+     * requires the game already closed, and echoes an explicit OK/FAIL token. Enabling also requires
+     * original PGRazor Off. Neither the game nor original module is changed. Off-main-thread.
      */
     RootShell.Result setInjection(boolean on) {
         if (!canToggle()) return new RootShell.Result(false,false,-1,"The installed module cannot be switched. Re-check its status.");
         RootShell.Result result = RootShell.run(RootToggleCommand.command(on), TOGGLE_TIMEOUT);
+        if (!result.ok() && result.output.contains("turn_original_pgrazor_off_first"))
+            return new RootShell.Result(result.started,result.timedOut,result.code,
+                result.output + "\nTurn original PGRazor Off in its installer first. PGSavant did not change it.");
+        if (!result.ok() && result.output.contains("close_game_first"))
+            return new RootShell.Result(result.started,result.timedOut,result.code,
+                result.output + "\nClose Pokemon GO before changing injection. No switch was changed.");
         if (result.ok() && !RootToggleCommand.confirmed(on,result.output))
             return new RootShell.Result(true,false,1,result.output + "\nSwitch confirmation was missing.");
         return result;
@@ -202,13 +208,13 @@ final class RootStatus {
         RootShell.Result preserved = RootShell.run(RootToggleCommand.preserveOffCommand(), TOGGLE_TIMEOUT);
         String note;
         if (preserved.ok() && RootToggleCommand.hasLine(preserved.output,RootToggleCommand.OK_PREFIX + "=preserved_off")) {
-            note = "PGRazor was Off; the update keeps it Off (reboot to apply).";
+            note = "PGSavant was Off; the update keeps it Off (reboot to apply).";
         } else if (preserved.timedOut) {
-            note = "WARNING: PGRazor was Off, but keeping it Off in the update could not be confirmed. "
-                + "After rebooting, turn PGRazor Off again if it came back On.";
+            note = "WARNING: PGSavant was Off, but keeping it Off in the update could not be confirmed. "
+                + "After rebooting, turn PGSavant Off again if it came back On.";
         } else {
-            note = "WARNING: PGRazor was Off, but the update may not have kept it Off. "
-                + "After rebooting, turn PGRazor Off again if it came back On.";
+            note = "WARNING: PGSavant was Off, but the update may not have kept it Off. "
+                + "After rebooting, turn PGSavant Off again if it came back On.";
         }
         String combined = installed.output
             + (preserved.output.isEmpty() ? "" : "\n" + preserved.output)
@@ -244,7 +250,7 @@ final class RootStatus {
         text.append("Root access: ").append(rooted ? "granted" : "not granted").append('\n');
         text.append("Root manager: ").append(managerLabel).append('\n');
         text.append("Zygisk: ").append(zygiskLabel).append('\n');
-        text.append("PGRazor module: ").append(moduleLabel).append('\n');
+        text.append("PGSavant module: ").append(moduleLabel).append('\n');
         text.append("Pokémon GO: ").append(describeGame());
         return text.toString();
     }
@@ -254,7 +260,7 @@ final class RootStatus {
         String base = (gameVersionName.isEmpty() ? "?" : gameVersionName) + " (" + gameVersionCode + ")";
         if (!gameCertTrusted) return base + " — not the official Niantic signature";
         if (gameVersionMatch) return base + " — supported";
-        return base + " — not " + InstallerConfig.GAME_VERSION_NAME + "; PGRazor will stay off until it matches";
+        return base + " — not " + InstallerConfig.GAME_VERSION_NAME + "; PGSavant will stay off until it matches";
     }
 
     private static String firstNonEmpty(String... options) {

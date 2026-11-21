@@ -64,11 +64,11 @@ public final class SettingsBackupRules {
         }
         JSONObject preferences=root.getJSONObject("preferences");
         for(Iterator<String> it=preferences.keys();it.hasNext();){String scope=it.next();JSONObject group=preferences.getJSONObject(scope);
-            require(Arrays.asList("pgrazor-map","pgrazor-overlays","pgrazor-saved-places-v1","pgrazor-livefeed").contains(scope),"Unknown settings group");
+            require(Arrays.asList("pgsavant-map","pgsavant-overlays","pgsavant-saved-places-v1","pgsavant-livefeed").contains(scope),"Unknown settings group");
             for(Iterator<String> keys=group.keys();keys.hasNext();){String key=keys.next();Object value=group.get(key);
-                if(scope.equals("pgrazor-map")){require(Arrays.asList("Stops","Gyms","Raids").contains(key),"Unknown map setting");bool(value,key);}
-                else if(scope.equals("pgrazor-overlays")){require(Arrays.asList("cooldown.fx","cooldown.fy","vgp.fx","vgp.fy","transfer.fx","transfer.fy","gym-feed.fx","gym-feed.fy","local-time.fx","local-time.fy").contains(key),"Unknown overlay setting");number(value,0,1,key);}
-                else if(scope.equals("pgrazor-saved-places-v1")){require(key.equals("places")&&value instanceof String,"Invalid favorites");places((String)value);}
+                if(scope.equals("pgsavant-map")){require(Arrays.asList("Stops","Gyms","Raids").contains(key),"Unknown map setting");bool(value,key);}
+                else if(scope.equals("pgsavant-overlays")){require(Arrays.asList("cooldown.fx","cooldown.fy","vgp.fx","vgp.fy","transfer.fx","transfer.fy","gym-feed.fx","gym-feed.fy","local-time.fx","local-time.fy").contains(key),"Unknown overlay setting");number(value,0,1,key);}
+                else if(scope.equals("pgsavant-saved-places-v1")){require(key.equals("places")&&value instanceof String,"Invalid favorites");places((String)value);}
                 else if(key.equals("category"))integer(value,5,key);
                 else if(key.equals("radius"))integer(value,2,key);
                 else if(key.equals("minIv"))integer(value,3,key);

@@ -109,7 +109,7 @@ public final class WorldMapDialog {
                 MapProjection.longitude(map.centerX), (lat,lon) -> map.select(lat,lon));
         });
         LinearLayout layers=new LinearLayout(ui);
-        SharedPreferences preferences=AccountProfiles.preferences(activity,"pgrazor-map");
+        SharedPreferences preferences=AccountProfiles.preferences(activity,"pgsavant-map");
         String[] names={"Stops","Gyms","Raids"};
         for(int i=0;i<names.length;i++){
             final int bit=1<<i;CheckBox toggle=new CheckBox(ui);toggle.setText(names[i]);toggle.setTextSize(13);
@@ -504,7 +504,7 @@ public final class WorldMapDialog {
             tiles = new MapTileSource(new MapTileSource.Host() {
                 public int zoom() { return zoom; }
                 public void onTilesChanged() { invalidate(); }
-            }, status, new File(activity.getCacheDir(), "pgrazor-map-tiles-v1"));
+            }, status, new File(activity.getCacheDir(), "pgsavant-map-tiles-v1"));
             poiLayer = new MapPoiLayer(activity, MapTheme.wrap(activity), new MapPoiLayer.Projector() {
                 public float screenX(double lon) { return projectX(lon); }
                 public float screenY(double lat) { return projectY(lat); }

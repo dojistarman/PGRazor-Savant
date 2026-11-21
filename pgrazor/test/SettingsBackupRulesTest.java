@@ -7,7 +7,7 @@ public class SettingsBackupRulesTest {
     private static JSONObject valid()throws Exception{
         return new JSONObject().put("format","PGRazor settings").put("version",1).put("speedKmh",9.3)
             .put("settings",new JSONObject().put("autoDismiss","true").put("transferProtect","63"))
-            .put("preferences",new JSONObject().put("pgrazor-overlays",new JSONObject().put("vgp.fx",0.8)));
+            .put("preferences",new JSONObject().put("pgsavant-overlays",new JSONObject().put("vgp.fx",0.8)));
     }
     private static void rejects(JSONObject value)throws Exception{
         try{SettingsBackupRules.validate(value);}catch(JSONException expected){return;}throw new AssertionError("Accepted invalid backup");
@@ -53,14 +53,14 @@ public class SettingsBackupRulesTest {
         for(String bad:new String[]{"701,701","701,703,705,706","702","701,","701, 703","0"}){berries.getJSONObject("settings").put("berryPriority",bad);rejects(berries);}
         rejects(valid().put("version",1.5));rejects(valid().put("speedKmh",99));
         JSONObject v=valid();v.getJSONObject("settings").put("vgpEnabled","true");rejects(v);
-        v=valid();v.getJSONObject("preferences").put("pgrazor-livefeed-session",new JSONObject().put("token","secret"));rejects(v);
+        v=valid();v.getJSONObject("preferences").put("pgsavant-livefeed-session",new JSONObject().put("token","secret"));rejects(v);
         v=valid();v.getJSONObject("settings").put("itemRules","1:100001;");rejects(v);
         v=valid();v.getJSONObject("settings").put("idleWalking","true");SettingsBackupRules.validate(v);
         v=valid();v.getJSONObject("settings").put("idleWalking","maybe");rejects(v);
         v=valid();v.getJSONObject("settings").put("localTimeOverlay","true");SettingsBackupRules.validate(v);
         v=valid();v.getJSONObject("settings").put("localTimeOverlay","maybe");rejects(v);
-        v=valid();v.getJSONObject("preferences").put("pgrazor-overlays",new JSONObject().put("local-time.fx",0.3).put("local-time.fy",0.6));SettingsBackupRules.validate(v);
-        v=valid();v.getJSONObject("preferences").put("pgrazor-overlays",new JSONObject().put("local-time.fx",1.2));rejects(v);
+        v=valid();v.getJSONObject("preferences").put("pgsavant-overlays",new JSONObject().put("local-time.fx",0.3).put("local-time.fy",0.6));SettingsBackupRules.validate(v);
+        v=valid();v.getJSONObject("preferences").put("pgsavant-overlays",new JSONObject().put("local-time.fx",1.2));rejects(v);
         v=valid();v.getJSONObject("settings").put("locationSpoofing","false");SettingsBackupRules.validate(v);
         v=valid();v.getJSONObject("settings").put("locationSpoofing","invalid");rejects(v);
         v=valid();v.getJSONObject("settings").put("ivCatch","false").put("ivOwned","true");SettingsBackupRules.validate(v);
@@ -78,7 +78,7 @@ public class SettingsBackupRulesTest {
         v=valid();v.getJSONObject("settings").put("pvpKeepLeagues","8");rejects(v);
         v=valid();v.getJSONObject("settings").put("pvpUltraRank","0");rejects(v);
         v=valid();v.getJSONObject("settings").put("autoBall","yes");rejects(v);
-        v=valid();v.getJSONObject("preferences").put("pgrazor-overlays",new JSONObject().put("vgp.fx",1.2));rejects(v);
+        v=valid();v.getJSONObject("preferences").put("pgsavant-overlays",new JSONObject().put("vgp.fx",1.2));rejects(v);
         v=valid();v.getJSONObject("settings").put("gymAutomationOverlay","false");SettingsBackupRules.validate(v);
         v=valid();v.getJSONObject("settings").put("gymAutomationOverlay","maybe");rejects(v);
         v=valid();v.getJSONObject("settings").put("gymAutomationSpin","true");SettingsBackupRules.validate(v);
@@ -94,8 +94,8 @@ public class SettingsBackupRulesTest {
         v=valid();v.getJSONObject("settings").put("smartCatchAutoBall","1");rejects(v);
         v=valid();v.getJSONObject("settings").put("smartCatchAutoBallTarget","0");rejects(v);
         v=valid();v.getJSONObject("settings").put("smartCatchAutoBallTarget","100");rejects(v);
-        v=valid();v.getJSONObject("preferences").put("pgrazor-overlays",new JSONObject().put("gym-feed.fx",0.4).put("gym-feed.fy",0.6));SettingsBackupRules.validate(v);
-        v=valid();v.getJSONObject("preferences").put("pgrazor-overlays",new JSONObject().put("gym-feed.fx",1.1));rejects(v);
+        v=valid();v.getJSONObject("preferences").put("pgsavant-overlays",new JSONObject().put("gym-feed.fx",0.4).put("gym-feed.fy",0.6));SettingsBackupRules.validate(v);
+        v=valid();v.getJSONObject("preferences").put("pgsavant-overlays",new JSONObject().put("gym-feed.fx",1.1));rejects(v);
         // Transfer keep list and Keep All / overlay settings.
         v=valid();v.getJSONObject("settings").put("transferKeepAll","true").put("transferOverlay","false").put("transferKeepSpecies","1,4,25,2000");SettingsBackupRules.validate(v);
         v=valid();v.getJSONObject("settings").put("transferKeepSpecies","");SettingsBackupRules.validate(v);
@@ -128,12 +128,12 @@ public class SettingsBackupRulesTest {
         v=valid();v.getJSONObject("settings").put("evolveTransferStages","3");rejects(v);
         v=valid();v.getJSONObject("settings").put("evolveTransferSpecies","1,1");rejects(v);         // duplicate dex id
         v=valid();v.getJSONObject("settings").put("evolveTransferSpecies","2001");rejects(v);        // out of range (>2000)
-        v=valid();v.getJSONObject("preferences").put("pgrazor-overlays",new JSONObject().put("transfer.fx",0.5).put("transfer.fy",0.25));SettingsBackupRules.validate(v);
-        v=valid();v.getJSONObject("preferences").put("pgrazor-overlays",new JSONObject().put("transfer.fx",1.5));rejects(v);
-        v=valid();v.getJSONObject("preferences").put("pgrazor-livefeed",new JSONObject().put("radius","2"));rejects(v);
+        v=valid();v.getJSONObject("preferences").put("pgsavant-overlays",new JSONObject().put("transfer.fx",0.5).put("transfer.fy",0.25));SettingsBackupRules.validate(v);
+        v=valid();v.getJSONObject("preferences").put("pgsavant-overlays",new JSONObject().put("transfer.fx",1.5));rejects(v);
+        v=valid();v.getJSONObject("preferences").put("pgsavant-livefeed",new JSONObject().put("radius","2"));rejects(v);
         String places="[{\"id\":\"a\",\"name\":\"Home\",\"latitude\":40,\"longitude\":-70}]";
-        v=valid();v.getJSONObject("preferences").put("pgrazor-saved-places-v1",new JSONObject().put("places",places));SettingsBackupRules.validate(v);
-        v.getJSONObject("preferences").getJSONObject("pgrazor-saved-places-v1").put("places",places.replace("40","400"));rejects(v);
+        v=valid();v.getJSONObject("preferences").put("pgsavant-saved-places-v1",new JSONObject().put("places",places));SettingsBackupRules.validate(v);
+        v.getJSONObject("preferences").getJSONObject("pgsavant-saved-places-v1").put("places",places.replace("40","400"));rejects(v);
         System.out.println("PASS settings backup: valid settings/favorites, schema, credential and VGP exclusion, bounds, IV display booleans, transfer keep list/Keep All/overlay validation, evolve-before-transfer enable/mode/stages/species validation and preference types");
     }
 }

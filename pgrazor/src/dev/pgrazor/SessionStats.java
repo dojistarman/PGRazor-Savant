@@ -28,7 +28,7 @@ public final class SessionStats {
         if (context == null) return;
         synchronized (LOCK) {
             if (store != null) return;
-            try { store = context.getApplicationContext().getSharedPreferences("pgrazor-session-stats", Context.MODE_PRIVATE); }
+            try { store = context.getApplicationContext().getSharedPreferences("pgsavant-session-stats", Context.MODE_PRIVATE); }
             catch (RuntimeException unavailable) { return; }
             account = "";
             follow(System.currentTimeMillis());

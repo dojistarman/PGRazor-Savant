@@ -7,7 +7,7 @@ import android.content.SharedPreferences;
 public final class EventSettings {
     public static final String HALLOWEEN_2026 = "halloween_2026";
     public static final String GO_WILD_NOVEMBER_2026 = "go_wild_november_2026";
-    private static final String FILE = "pgrazor-events-v1";
+    private static final String FILE = "pgsavant-events-v1";
     private static final String BOX_COLLECTOR_KEY = HALLOWEEN_2026 + ".box_collector";
     // Go Wild November 2026: two independent, default-off opt-ins that only change the ball used for
     // Mighty Pokemon. Neither enables its base feature (VGP+ / Auto Ball) and neither is capability

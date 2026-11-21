@@ -20,7 +20,7 @@ public final class Cooldown {
     private static final Map<String,String> countries=new ConcurrentHashMap<>();
     private static AtomicFile file; private static long nextId; private static Context context;
     private static volatile IOException writeFailure;
-    public static synchronized void init(Context app){context=app.getApplicationContext();file=new AtomicFile(AccountProfiles.file(app,"cooldown-history.txt"));try{state.decode(new String(file.readFully(),StandardCharsets.UTF_8));for(CooldownState.Entry e:state.rows)nextId=Math.max(nextId,e.id);}catch(IOException ignored){}}
+    public static synchronized void init(Context app){context=app.getApplicationContext();file=new AtomicFile(AccountProfiles.file(app,"pgsavant-cooldown-history.txt"));try{state.decode(new String(file.readFully(),StandardCharsets.UTF_8));for(CooldownState.Entry e:state.rows)nextId=Math.max(nextId,e.id);}catch(IOException ignored){}}
     static void flush() throws IOException {
         try {io.submit(()->{}).get(2500,TimeUnit.MILLISECONDS);if(writeFailure!=null)throw writeFailure;}
         catch(Exception error){throw new IOException("Cooldown save did not finish",error);}

@@ -24,8 +24,8 @@ import javax.crypto.spec.GCMParameterSpec;
  * thread. {@link #signedIn()} only inspects for the presence of a stored blob and stays cheap.
  */
 public final class LiveFeedSession {
-    private static final String PREFS = "pgrazor-livefeed-v1";
-    private static final String KEY_ALIAS_DEFAULT = "pgrazor_livefeed_token_v1";
+    private static final String PREFS = "pgsavant-livefeed-v1";
+    private static final String KEY_ALIAS_DEFAULT = "pgsavant_livefeed_token_v1";
     private static final String KEY_CIPHERTEXT = "token_ct";
     private static final String KEY_IV = "token_iv";
     private static final String KEYSTORE = "AndroidKeyStore";
@@ -41,7 +41,7 @@ public final class LiveFeedSession {
 
     /** The PoGoCoordinates site token (its JWT), stored apart from the LivePokeMap token. */
     public static LiveFeedSession pogoCoordinates(Context context) {
-        return new LiveFeedSession(context, "pgrazor-pogofeed-v1", "pgrazor_pogofeed_token_v1");
+        return new LiveFeedSession(context, "pgsavant-pogofeed-v1", "pgsavant_pogofeed_token_v1");
     }
 
     private LiveFeedSession(Context context, String prefs, String keyAlias) {

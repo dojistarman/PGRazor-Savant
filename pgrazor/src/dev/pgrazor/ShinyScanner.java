@@ -174,8 +174,8 @@ public final class ShinyScanner {
         if (context == null || !mayNotify(context)) return;
         try {
             android.app.NotificationManager manager = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            manager.createNotificationChannel(new android.app.NotificationChannel("pgrazor-shiny", "PGRazor shiny found", android.app.NotificationManager.IMPORTANCE_HIGH));
-            manager.notify(7302, new android.app.Notification.Builder(context, "pgrazor-shiny").setSmallIcon(android.R.drawable.star_on)
+            manager.createNotificationChannel(new android.app.NotificationChannel("pgsavant-shiny", "PGRazor shiny found", android.app.NotificationManager.IMPORTANCE_HIGH));
+            manager.notify(7302, new android.app.Notification.Builder(context, "pgsavant-shiny").setSmallIcon(android.R.drawable.star_on)
                 .setContentTitle("✨ Shiny found").setContentText(text).setAutoCancel(true).build());
         } catch (RuntimeException error) { Control.event("shiny-scan-notification-error", error.toString()); }
     }
@@ -193,7 +193,7 @@ public final class ShinyScanner {
         if (context == null || app != null) return;
         final Context application = context.getApplicationContext();
         app = application;
-        new Thread(() -> names = PokemonSpeciesDialog.readNames(application), "pgrazor-shiny-names").start();
+        new Thread(() -> names = PokemonSpeciesDialog.readNames(application), "pgsavant-shiny-names").start();
     }
 
     private static double meters(double lat1, double lon1, double lat2, double lon2) {

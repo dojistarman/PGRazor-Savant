@@ -16,7 +16,7 @@ final class RootedRestart {
             // startActivityForResult gives the helper an OS-authenticated calling package. The
             // helper neither reads account data nor receives root commands, tokens or process IDs.
             activity.startActivityForResult(new Intent().setClassName(
-                    "dev.pgrazor.root", "dev.pgrazor.root.RestartActivity"), 0x9A70);
+                    "com.arevj.pgsavant", "dev.pgrazor.root.RestartActivity"), 0x9A70);
             Control.event("rooted-restart", "Installer will reopen game; switchSession=" + switchSession);
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 Process.killProcess(Process.myPid());

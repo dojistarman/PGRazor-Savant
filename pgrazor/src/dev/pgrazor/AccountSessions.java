@@ -12,19 +12,19 @@ final class AccountSessions {
     static void switchPending(Context context) throws IOException {run(context,1);}
     static void cancelSwitch(Context context) throws IOException {run(context,2);}
     static void deleteProfile(Context context,AccountProfileStore profiles,String id)throws IOException{
-        File lockFile=new File(context.getNoBackupFilesDir(),"pgrazor-account-switch.lock");
+        File lockFile=new File(context.getNoBackupFilesDir(),"pgsavant-account-switch.lock");
         try(RandomAccessFile lock=new RandomAccessFile(lockFile,"rw");FileLock held=acquire(lock)){
             profiles.requireRemovable(id);
-            if(new File(context.getNoBackupFilesDir(),"pgrazor-account-sessions-v1/switch-journal.bin").exists())throw new IOException("Finish switching before deleting an account");
+            if(new File(context.getNoBackupFilesDir(),"pgsavant-account-sessions-v1/switch-journal.bin").exists())throw new IOException("Finish switching before deleting an account");
             new AccountSessionVault(context).delete(id);
             AccountProfileData.delete(profiles,context.getFilesDir(),new File(context.getApplicationInfo().dataDir,"shared_prefs"),id);
             profiles.remove(id);
         }
     }
     private static boolean run(Context context,int action) throws IOException {
-        File lockFile=new File(context.getNoBackupFilesDir(),"pgrazor-account-switch.lock");
+        File lockFile=new File(context.getNoBackupFilesDir(),"pgsavant-account-switch.lock");
         try(RandomAccessFile lock=new RandomAccessFile(lockFile,"rw");FileLock held=acquire(lock)){
-            boolean journal=new File(context.getNoBackupFilesDir(),"pgrazor-account-sessions-v1/switch-journal.bin").exists();
+            boolean journal=new File(context.getNoBackupFilesDir(),"pgsavant-account-sessions-v1/switch-journal.bin").exists();
             // Patched APK: a restart with no journal has nothing to finish. PGRazor Root has no
             // separate restart process, so a switch recorded before the cold restart is applied here,
             // in this fresh pre-Unity process, exactly where the restart helper would have applied it.
@@ -43,7 +43,7 @@ final class AccountSessions {
                     if(journal)transaction.recover();else transaction.switchPending();
                 }
                 catch(IOException damagedJournal){
-                    if(!journal&&!new File(context.getNoBackupFilesDir(),"pgrazor-account-sessions-v1/switch-journal.bin").exists())throw damagedJournal;
+                    if(!journal&&!new File(context.getNoBackupFilesDir(),"pgsavant-account-sessions-v1/switch-journal.bin").exists())throw damagedJournal;
                     // Keep saved profiles and encrypted evidence. A fresh login is safer
                     // than launching with a partially applied session or a crash loop.
                     transaction.resetForSignIn();vault.quarantineJournal();return false;

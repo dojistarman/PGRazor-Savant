@@ -422,12 +422,12 @@ public final class Control {
     private static boolean stateWriteFailed;
     private static final AtomicBoolean checkpointPending = new AtomicBoolean();
     private static final ExecutorService stateWriter = Executors.newSingleThreadExecutor(task -> {
-        Thread thread = new Thread(task, "pgrazor-state-writer"); thread.setDaemon(true); return thread;
+        Thread thread = new Thread(task, "pgsavant-state-writer"); thread.setDaemon(true); return thread;
     });
     // One daemon worker per burst: SettingsWriter only schedules a drain when idle, so at most one
     // drain writes at a time, and it exits once the queue empties. Nothing permanent blocks JVM exit.
     private static final Executor settingsIo = task -> {
-        Thread thread = new Thread(task, "pgrazor-settings-writer"); thread.setDaemon(true); thread.start();
+        Thread thread = new Thread(task, "pgsavant-settings-writer"); thread.setDaemon(true); thread.start();
     };
     private static SettingsWriter settingsWriter;
     // Explicit export/import block until durable; a shorter bound keeps a background flush from stalling.
@@ -983,13 +983,13 @@ public final class Control {
         hostApplication=app;
         vgp.setApplication(app);
         try {
-            File dir = new File(app.getFilesDir(), "pgrazor-logs");
+            File dir = new File(app.getFilesDir(), "pgsavant-logs");
             if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Cannot create log folder");
             logFile = new File(dir, new SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.US).format(new Date()) + ".txt");
             log = new PrintWriter(new FileOutputStream(logFile), true);
         } catch (IOException error) { Log.e("PGRazor", "File logging unavailable", error); }
         // Recover recent run tails after a crash without changing or deleting private originals.
-        new Thread(() -> recoverRunLogs(app),"pgrazor-log-recovery").start();
+        new Thread(() -> recoverRunLogs(app),"pgsavant-log-recovery").start();
         event("session-start", connection);
         AccountProfiles.init(app);
         loadState(app);
@@ -1117,7 +1117,7 @@ public final class Control {
     }
     private static void loadState(Application app) {
         synchronized (stateLock) {
-            stateFile = new AtomicFile(AccountProfiles.file(app, "pgrazor-location-state-v1.txt"));
+            stateFile = new AtomicFile(AccountProfiles.file(app, "pgsavant-location-state-v1.txt"));
             LocationState state = LocationState.defaults();
             String source = "defaults";
             StrictMode.ThreadPolicy policy = StrictMode.allowThreadDiskReads();
@@ -1182,7 +1182,7 @@ public final class Control {
             if(settingsFile==null) {
                 // Create the destination and its writer once so the sink can close over a stable
                 // target; the file path never changes within a process.
-                settingsFile=new AtomicFile(AccountProfiles.file(app,"pgrazor-settings-v1.properties"));
+                settingsFile=new AtomicFile(AccountProfiles.file(app,"pgsavant-settings-v1.properties"));
                 final AtomicFile target=settingsFile;
                 settingsWriter=new SettingsWriter(settingsIo,snapshot->writeSettings(target,snapshot),
                                                   error->event("settings-save-error",error.toString()));
@@ -1560,8 +1560,8 @@ public final class Control {
     private static void recoverRunLogs(Application app) {
       synchronized(logLock) {
         try {
-            File[] files=new File(app.getFilesDir(),"pgrazor-logs").listFiles((dir,name)->name.endsWith(".txt"));
-            File destination=app.getExternalFilesDir("pgrazor-diagnostics");
+            File[] files=new File(app.getFilesDir(),"pgsavant-logs").listFiles((dir,name)->name.endsWith(".txt"));
+            File destination=app.getExternalFilesDir("pgsavant-diagnostics");
             if(files==null||destination==null)return;
             if(!destination.isDirectory()&&!destination.mkdirs())return;
             java.util.Arrays.sort(files,(a,b)->b.getName().compareTo(a.getName()));
@@ -1582,7 +1582,7 @@ public final class Control {
                     }
                 }
             }
-            synchronized(logLock){pruneLogs(new File(app.getFilesDir(),"pgrazor-logs"),logFile,6);}
+            synchronized(logLock){pruneLogs(new File(app.getFilesDir(),"pgsavant-logs"),logFile,6);}
             pruneLogs(destination,null,6);
             event("log-recovery","Recent run tails saved; retaining six log segments and six diagnostic tails");
         }catch(IOException|RuntimeException error){event("log-recovery-error",error.toString());}

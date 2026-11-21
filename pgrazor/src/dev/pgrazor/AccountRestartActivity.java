@@ -40,7 +40,7 @@ import java.util.List;
 public final class AccountRestartActivity extends Activity {
     /** Int extra: pid of the main process that asked for the restart. */
     public static final String EXTRA_SOURCE_PID = "sourcePid";
-    private static final String STATE_HANDLED = "pgrazor_restart_handled";
+    private static final String STATE_HANDLED = "pgsavant_restart_handled";
     private static final long LAUNCH_DELAY_MS = 400L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -140,7 +140,7 @@ public final class AccountRestartActivity extends Activity {
                         processing=false;sessionApplied=true;if(!isDestroyed())launchGame();
                     });}
                     catch(Exception error){handler.post(()->{processing=false;if(!isDestroyed())showManualLaunch();});}
-                },"pgrazor-session-switch").start();
+                },"pgsavant-session-switch").start();
                 return;
             }
             Intent launch = getPackageManager().getLaunchIntentForPackage(getPackageName());
@@ -170,7 +170,7 @@ public final class AccountRestartActivity extends Activity {
                     new Thread(()->{
                         try{AccountSessions.cancelSwitch(getApplicationContext());handler.post(()->{processing=false;sessionApplied=true;if(!isDestroyed())launchGame();});}
                         catch(Exception error){handler.post(()->{processing=false;if(!isDestroyed())status.setText("Couldn't restore the previous account. Saved sessions have been kept.");});}
-                    },"pgrazor-session-return").start();
+                    },"pgsavant-session-return").start();
                 });layout.addView(back);
             }
         }

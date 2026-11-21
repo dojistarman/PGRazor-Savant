@@ -18,7 +18,7 @@ public class Context {
  private static final java.util.Map<String,Boolean> values=new java.util.HashMap<>();
  public Context getApplicationContext(){return this;}
  public SharedPreferences getSharedPreferences(String name,int mode){
-  if(!name.equals("pgrazor-events-v1"))throw new AssertionError("separate event namespace");
+  if(!name.equals("pgsavant-events-v1"))throw new AssertionError("separate event namespace");
   return new SharedPreferences(){
    public boolean getBoolean(String key,boolean fallback){return values.getOrDefault(key,fallback);}
    public Editor edit(){return new Editor(){java.util.Map<String,Boolean> pending=new java.util.HashMap<>();

@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class RouteStartJavaTests(unittest.TestCase):
     def test_route_start(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix="pgrazor-route-start-") as work:
+        with tempfile.TemporaryDirectory(prefix="pgsavant-route-start-") as work:
             sources = [ROOT / "src/dev/pgrazor/RouteStart.java", ROOT / "test/RouteStartTest.java"]
             result = subprocess.run([str(compiler), "-encoding", "UTF-8", "-d", work, *map(str, sources)], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

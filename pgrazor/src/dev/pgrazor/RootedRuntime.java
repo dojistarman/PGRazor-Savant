@@ -35,7 +35,7 @@ public final class RootedRuntime {
 
     public static void start(byte[] payload, String dataDir, Consumer<ClassLoader> loader) throws Exception {
         gameLoader = loader;
-        File directory = new File(new File(dataDir, "code_cache"), "pgrazor-root");
+        File directory = new File(new File(dataDir, "code_cache"), "pgsavant-root");
         if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException("Cannot create " + directory);
         File archive = new File(directory, "payload.zip");
         writeIfChanged(archive, payload);

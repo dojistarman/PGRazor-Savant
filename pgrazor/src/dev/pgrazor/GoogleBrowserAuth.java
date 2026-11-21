@@ -206,7 +206,7 @@ public final class GoogleBrowserAuth {
         final Session captured = session;
         Control.event("google-auth", "callback accepted; token exchange starting");
         Thread worker = new Thread(() -> finishResult(captured, exchange(code, verifier, nonce)),
-                "pgrazor-google-auth");
+                "pgsavant-google-auth");
         worker.setDaemon(true);
         worker.start();
         return true;

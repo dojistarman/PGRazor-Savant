@@ -35,7 +35,7 @@ public final class LogExport {
         } catch(JSONException error) { throw new IOException("Cannot capture settings",error); }
     }
     private static JSONObject preferenceGroups(Context context)throws IOException {
-        String[] scopes={"pgrazor-map","pgrazor-overlays","pgrazor-livefeed","pgrazor-pogofeed"};
+        String[] scopes={"pgsavant-map","pgsavant-overlays","pgsavant-livefeed","pgsavant-pogofeed"};
         String[][] keys={{"Stops","Gyms","Raids"},
             {"cooldown.fx","cooldown.fy","vgp.fx","vgp.fy","transfer.fx","transfer.fy","gym-feed.fx","gym-feed.fy","local-time.fx","local-time.fy"},
             {"category","radius","minIv","myShinies","filters_v1"},
@@ -52,7 +52,7 @@ public final class LogExport {
             events.put("halloween_2026.box_collector",dev.pgrazor.events.EventSettings.boxCollectorRequested(context));
             events.put("go_wild_november_2026.vgp_plus_safari",dev.pgrazor.events.EventSettings.wildVgpSafari(context));
             events.put("go_wild_november_2026.auto_ball_safari",dev.pgrazor.events.EventSettings.wildAutoBallSafari(context));
-            groups.put("pgrazor-events-v1",events);
+            groups.put("pgsavant-events-v1",events);
             return groups;
         } catch(JSONException error) { throw new IOException("Cannot capture preferences",error); }
     }
@@ -110,8 +110,8 @@ public final class LogExport {
     }
     public static File copyToExternal(Context context,File file,boolean includeSettings) throws IOException {
         if(file==null) throw new IOException("No log is available");
-        File dir=context.getExternalFilesDir("pgrazor-logs");
-        if(dir==null) dir=new File(context.getFilesDir(),"pgrazor-logs/exports");
+        File dir=context.getExternalFilesDir("pgsavant-logs");
+        if(dir==null) dir=new File(context.getFilesDir(),"pgsavant-logs/exports");
         if(!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Cannot create export folder");
         String name=includeSettings?file.getName().replaceFirst("\\.txt$","")+".zip":file.getName();
         File dest=new File(dir,name),temp=new File(dir,name+".tmp");

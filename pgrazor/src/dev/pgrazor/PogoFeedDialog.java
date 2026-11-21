@@ -121,7 +121,7 @@ public final class PogoFeedDialog {
         private final SharedPreferences prefs;
         private final Handler main = new Handler(Looper.getMainLooper());
         private final ExecutorService net = Executors.newSingleThreadExecutor(task -> {
-            Thread t = new Thread(task, "pgrazor-pogofeed"); t.setDaemon(true); return t;
+            Thread t = new Thread(task, "pgsavant-pogofeed"); t.setDaemon(true); return t;
         });
         private final PogoFeedClient client;
         private final PogoFeedIcons icons;
@@ -162,7 +162,7 @@ public final class PogoFeedDialog {
 
         Controller(Activity activity, Context ui, AlertDialog dialog, LinearLayout root) {
             this.activity = activity; this.ui = ui; this.dialog = dialog; this.root = root;
-            prefs = AccountProfiles.preferences(activity,"pgrazor-pogofeed");
+            prefs = AccountProfiles.preferences(activity,"pgsavant-pogofeed");
             mode = PogoFeedModes.Mode.byName(prefs.getString("feedMode", "POKEMON"));
             if (prefs.contains("radiusKm")) {
                 radiusKm = Math.max(0, prefs.getFloat("radiusKm", 0f));

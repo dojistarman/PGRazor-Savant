@@ -14,7 +14,7 @@ class CatchChanceJavaTests(unittest.TestCase):
         json_sources = sorted((sdk / 'sources').glob('android-*/org/json'), reverse=True)
         if not json_sources:
             self.skipTest('Android SDK JSON sources unavailable')
-        with tempfile.TemporaryDirectory(prefix="pgrazor-catch-chance-") as work:
+        with tempfile.TemporaryDirectory(prefix="pgsavant-catch-chance-") as work:
             work = Path(work)
             sources = [ROOT / "src/dev/pgrazor/CatchChance.java", ROOT / "test/CatchChanceTest.java"]
             for original in json_sources[0].glob('*.java'):

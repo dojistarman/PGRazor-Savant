@@ -60,14 +60,21 @@ class RootedInstallerShellTests(unittest.TestCase):
             (live/'pgrazor').mkdir(parents=True)
             (live/'module.prop').write_text('version=v0.2.5-test\n')
             marker = live/'pgrazor/toggle-v1'; flag = live/'pgrazor/injection-off'
-            stopped = folder/'stopped'
-            def run(name, fail_stop=False):
-                script = commands[name].replace('/data/adb/modules_update/pgrazor','./pending').replace('/data/adb/modules/pgrazor','./live')
-                fake_am = 'am(){ return 1; }; ' if fail_stop else 'am(){ [ "$1" = force-stop ] && [ "$2" = com.nianticlabs.pokemongo ] && touch stopped; }; '
-                return subprocess.run([bash,'-c',fake_am+script],cwd=work,capture_output=True,text=True,timeout=10)
+            original = folder/'original'; original.mkdir()
+            (original/'pgrazor').mkdir()
+            original_off=original/'pgrazor/injection-off'
+            original_off.touch()
+            def run(name, running=False, process_unknown=False):
+                script = commands[name].replace('/data/adb/modules_update/pgsavant','./pending').replace('/data/adb/modules/pgsavant','./live')
+                script=script.replace('/data/adb/modules/pgrazor','./original').replace('/data/adb/modules','.')
+                process = 'pidof(){ echo 123; return 0; }; ' if running else 'pidof(){ return 2; }; ' if process_unknown else 'pidof(){ return 1; }; '
+                # No command may stop or launch the game or change the original's switch.
+                self.assertNotIn('am force-stop',script)
+                self.assertNotIn('am start',script)
+                return subprocess.run([bash,'-c',process+script],cwd=work,capture_output=True,text=True,timeout=10)
             self.assertNotIn('MODTOGGLE=1',run('probe').stdout)
             self.assertNotEqual(run('off').returncode,0)
-            self.assertFalse(flag.exists()); self.assertFalse(stopped.exists())
+            self.assertFalse(flag.exists())
             marker.touch()
             for staged in (False,True):
                 if staged: (pending/'pgrazor').mkdir(parents=True)
@@ -76,26 +83,32 @@ class RootedInstallerShellTests(unittest.TestCase):
                     self.assertEqual(result.returncode,0,result.stdout+result.stderr)
                     self.assertEqual(flag.is_file(),not on)
                     if staged: self.assertEqual((pending/'pgrazor/injection-off').is_file(),not on)
-                    self.assertTrue(stopped.is_file()); stopped.unlink()
+                    self.assertTrue(original_off.is_file())
                     probe=run('probe').stdout
                     self.assertIn('MODTOGGLE=1',probe)
                     self.assertEqual('MODOFF=1' in probe,not on)
                     self.assertEqual('MODPENDING=1' in probe,staged)
             for block in ('disable','remove'):
                 (live/block).touch(); self.assertNotEqual(run('off').returncode,0)
-                self.assertFalse(flag.exists()); self.assertFalse(stopped.exists()); (live/block).unlink()
-            result=run('off',True)
-            self.assertNotEqual(result.returncode,0); self.assertNotIn('PGRAZOR_TOGGLE_OK',result.stdout)
-            self.assertTrue(flag.exists())
-            run('on'); stopped.unlink()
+                self.assertFalse(flag.exists()); (live/block).unlink()
+            result=run('off',running=True)
+            self.assertNotEqual(result.returncode,0); self.assertNotIn('PGSAVANT_TOGGLE_OK',result.stdout)
+            self.assertFalse(flag.exists(), 'a running game must prevent any writes')
+            self.assertNotEqual(run('off',process_unknown=True).returncode,0)
+            run('off')
+            original_off.unlink()
+            self.assertNotEqual(run('on').returncode,0)
+            self.assertTrue(flag.exists(), 'original On must leave derivative Off')
+            self.assertFalse(original_off.exists(), 'never turn the original off implicitly')
+            original_off.touch(); self.assertEqual(run('on').returncode,0)
             (pending/'pgrazor/injection-off').mkdir()
             failed=run('off')
-            self.assertNotEqual(failed.returncode,0); self.assertFalse(stopped.exists())
-            self.assertNotIn('PGRAZOR_TOGGLE_OK',failed.stdout)
+            self.assertNotEqual(failed.returncode,0)
+            self.assertNotIn('PGSAVANT_TOGGLE_OK',failed.stdout)
             (pending/'pgrazor/injection-off').rmdir()
             self.assertEqual(run('preserve').returncode,0)
             self.assertTrue((pending/'pgrazor/injection-off').is_file())
-            self.assertFalse(stopped.exists())
+            self.assertTrue(original_off.is_file())
 
 
 if __name__ == '__main__':

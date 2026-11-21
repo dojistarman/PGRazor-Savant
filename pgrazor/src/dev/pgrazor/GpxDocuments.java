@@ -26,7 +26,7 @@ public final class GpxDocuments extends Fragment {
         void onCancelled();
     }
 
-    private static final String TAG = "pgrazor-gpx-documents";
+    private static final String TAG = "pgsavant-gpx-documents";
     private static final int REQUEST = 0x6778; // android.app.Fragment allows only the lower 16 bits
     private Intent intent;
     private Callback callback;

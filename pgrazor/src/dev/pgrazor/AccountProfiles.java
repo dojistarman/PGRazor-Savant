@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 /** A process owns one immutable storage namespace. Switching always starts a new process. */
 final class AccountProfiles {
     private static final Handler main = new Handler(Looper.getMainLooper());
-    private static final ExecutorService io = Executors.newSingleThreadExecutor(r -> new Thread(r,"pgrazor-accounts"));
+    private static final ExecutorService io = Executors.newSingleThreadExecutor(r -> new Thread(r,"pgsavant-accounts"));
     private static AccountProfileStore store;
     private static final java.util.Set<SharedPreferences> openPreferences=java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<SharedPreferences,Boolean>());
     private static String startupId = "default";

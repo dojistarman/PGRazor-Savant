@@ -99,7 +99,7 @@ final class RootedLogDialog {
                         Toast.makeText(app, "Save failed: " + error.getMessage(), Toast.LENGTH_LONG).show();
                     });
                 }
-            }, "pgrazor-log-export").start();
+            }, "pgsavant-log-export").start();
         };
         save.setOnClickListener(export);
         bundle.setOnClickListener(export);

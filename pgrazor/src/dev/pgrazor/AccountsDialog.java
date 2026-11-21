@@ -21,7 +21,7 @@ final class AccountsDialog {
         if(store!=null)for(AccountProfileStore.Profile profile:store.list()){
             LinearLayout row=new LinearLayout(ui);row.setOrientation(1);row.setPadding(0,pad/2,0,pad/2);
             TextView label=new TextView(ui);label.setText(profile.label+(profile.id.equals(AccountProfiles.currentId())?" (current)":""));label.setTextSize(17);row.addView(label);
-            try{android.util.AtomicFile f=new android.util.AtomicFile(store.dataFile(profile.id,"pgrazor-location-state-v1.txt"));
+            try{android.util.AtomicFile f=new android.util.AtomicFile(store.dataFile(profile.id,"pgsavant-location-state-v1.txt"));
                 LocationState location=LocationState.decode(new String(f.readFully(),java.nio.charset.StandardCharsets.UTF_8));
                 TextView coords=new TextView(ui);coords.setText(String.format(Locale.US,"%.5f, %.5f",location.latitude,location.longitude));row.addView(coords);
             }catch(Exception ignored){}

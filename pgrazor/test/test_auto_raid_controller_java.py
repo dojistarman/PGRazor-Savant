@@ -31,7 +31,7 @@ class AutoRaidControllerJavaTests(unittest.TestCase):
         ]
         for source in real_sources:
             self.assertTrue(source.exists(), f"missing source {source}")
-        with tempfile.TemporaryDirectory(prefix="pgrazor-auto-raid-") as directory:
+        with tempfile.TemporaryDirectory(prefix="pgsavant-auto-raid-") as directory:
             work = Path(directory)
             sources = [*map(str, stub_sources), *map(str, real_sources)]
             compiled = subprocess.run(

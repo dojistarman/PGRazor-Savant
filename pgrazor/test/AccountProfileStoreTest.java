@@ -30,14 +30,36 @@ public final class AccountProfileStoreTest {
         corruptionFailsClosed(new File(root, "corrupt"));
         oversizeRejected(new File(root, "oversize"));
         invalidInputsRejected(new File(root, "invalid"));
+        originalProductUntouched(new File(root, "original-product"));
 
         System.out.println("PASS: AccountProfileStore legacy/identity/separation/restart/corruption/validation");
+    }
+
+    private static void originalProductUntouched(File filesDir) throws Exception {
+        filesDir.mkdirs();
+        File originalIndex = new File(filesDir, "pgrazor-accounts-v1/index.properties");
+        originalIndex.getParentFile().mkdirs();
+        byte[] damagedOriginal = "unreadable original fixture; never migrate".getBytes(StandardCharsets.UTF_8);
+        Files.write(originalIndex.toPath(), damagedOriginal);
+        File originalSettings = new File(filesDir, "pgrazor-settings-v1.properties");
+        byte[] originalBytes = "original fixture settings".getBytes(StandardCharsets.UTF_8);
+        Files.write(originalSettings.toPath(), originalBytes);
+        AccountProfileStore derivative = new AccountProfileStore(filesDir);
+        derivative.add("Synthetic second profile");
+        Files.write(derivative.dataFile(derivative.selected().id, "pgsavant-settings-v1.properties").toPath(),
+            "new derivative fixture".getBytes(StandardCharsets.UTF_8));
+        check(java.util.Arrays.equals(damagedOriginal, Files.readAllBytes(originalIndex.toPath())),
+            "Original account index is neither decoded nor rewritten");
+        check(java.util.Arrays.equals(originalBytes, Files.readAllBytes(originalSettings.toPath())),
+            "Original settings remain byte-identical");
+        check(new File(filesDir, "pgsavant-accounts-v1/index.properties").isFile(),
+            "Derivative has its own account index");
     }
 
     private static void legacyDefaultPreserved(File filesDir) throws Exception {
         filesDir.mkdirs();
         // A legacy file already lives directly in filesDir; it must stay reachable in place.
-        File legacy = new File(filesDir, "pgrazor-settings.json");
+        File legacy = new File(filesDir, "pgsavant-settings.json");
         Files.write(legacy.toPath(), "{}".getBytes(StandardCharsets.UTF_8));
 
         AccountProfileStore store = new AccountProfileStore(filesDir);
@@ -46,7 +68,7 @@ public final class AccountProfileStoreTest {
         check(AccountProfileStore.DEFAULT_ID.equals(def.id), "Default is selected at startup");
         check(!def.bound(), "Default starts unbound");
 
-        check(canon(store.dataFile(def.id, "pgrazor-settings.json")).equals(canon(legacy)),
+        check(canon(store.dataFile(def.id, "pgsavant-settings.json")).equals(canon(legacy)),
                 "Default data files resolve in place in filesDir");
         check(store.preferenceName(def.id, "settings").equals("settings"),
                 "Default keeps the unsuffixed legacy preference name");
@@ -129,7 +151,7 @@ public final class AccountProfileStoreTest {
         File otherFile = store.dataFile(other.id, "state.json");
         check(!canon(defFile).equals(canon(otherFile)), "Two profiles get separate data files");
         check(canon(defFile).equals(canon(new File(filesDir, "state.json"))), "Default stays in filesDir");
-        check(canon(otherFile).startsWith(canon(new File(filesDir, "pgrazor-accounts-v1"))),
+        check(canon(otherFile).startsWith(canon(new File(filesDir, "pgsavant-accounts-v1"))),
                 "Non-default files are scoped under the account store");
         check(otherFile.getParentFile().isDirectory(), "The scoped profile directory is created on demand");
 
@@ -140,7 +162,7 @@ public final class AccountProfileStoreTest {
     }
 
     private static void corruptionFailsClosed(File filesDir) throws Exception {
-        File base = new File(filesDir, "pgrazor-accounts-v1");
+        File base = new File(filesDir, "pgsavant-accounts-v1");
         base.mkdirs();
         File index = new File(base, "index.properties");
         // A valid version line but missing the required selected/ids fields: must fail, not reset.
@@ -155,7 +177,7 @@ public final class AccountProfileStoreTest {
     }
 
     private static void oversizeRejected(File filesDir) throws Exception {
-        File base = new File(filesDir, "pgrazor-accounts-v1");
+        File base = new File(filesDir, "pgsavant-accounts-v1");
         base.mkdirs();
         File index = new File(base, "index.properties");
         byte[] huge = new byte[AccountProfileStore.MAX_INDEX_BYTES + 1];

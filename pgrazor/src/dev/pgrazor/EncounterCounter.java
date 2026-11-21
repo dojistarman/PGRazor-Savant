@@ -29,7 +29,7 @@ public final class EncounterCounter {
         if (context == null) return;
         synchronized (LOCK) {
             if (store != null) return;
-            try { store = context.getApplicationContext().getSharedPreferences("pgrazor-encounters", Context.MODE_PRIVATE); }
+            try { store = context.getApplicationContext().getSharedPreferences("pgsavant-encounters", Context.MODE_PRIVATE); }
             catch (RuntimeException unavailable) { return; }
             account = "";
             follow(System.currentTimeMillis(), true);

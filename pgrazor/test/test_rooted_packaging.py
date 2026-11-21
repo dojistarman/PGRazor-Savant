@@ -25,7 +25,7 @@ class RootedPackagingTests(unittest.TestCase):
             self.assertEqual(rooted.version_code(version), code)
             manifest = ET.fromstring(rooted_installer._manifest(version))
             self.assertEqual(manifest.attrib['{http://schemas.android.com/apk/res/android}versionCode'], str(code))
-            self.assertEqual(manifest.attrib['package'], 'dev.pgrazor.root')
+            self.assertEqual(manifest.attrib['package'], 'com.arevj.pgsavant')
 
     def test_reject_ambiguous_overflow_and_injection(self):
         for version in ['0.0.0', '1.1000.0', '1.0.1000', '9999.0.0', '1.2.3-x\nupdateJson=evil', '1.2.3-"x', '1.2.3-', 'v1.2']:
@@ -47,13 +47,11 @@ class ToggleCapabilityTests(unittest.TestCase):
         entries = rooted.capability_module_entries()
         self.assertEqual(entries['customize.sh'], rooted.CUSTOMIZE_SH)
         # package() merges these into the module zip without overwriting payload/dex/loader.
-        self.assertEqual(set(entries), {'customize.sh', rooted.TOGGLE_CAPABILITY})
+        self.assertEqual(set(entries), {'customize.sh', rooted.TOGGLE_CAPABILITY, rooted.INJECTION_OFF_FLAG})
 
-    def test_injection_off_is_never_shipped_by_default(self):
-        # A fresh install must default to On: the off flag is not a packaged entry, and the
-        # installer clears stale staged Off only when the live choice is On.
+    def test_fresh_derivative_is_shipped_off(self):
         self.assertEqual(rooted.INJECTION_OFF_FLAG, 'pgrazor/injection-off')
-        self.assertNotIn(rooted.INJECTION_OFF_FLAG, rooted.capability_module_entries())
+        self.assertEqual(rooted.capability_module_entries()[rooted.INJECTION_OFF_FLAG], b'')
         script = rooted.CUSTOMIZE_SH
         self.assertIn('rm -f "${STAGED_FLAG}"', script)
 
@@ -64,7 +62,7 @@ class ToggleCapabilityTests(unittest.TestCase):
             candidate = Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / 'Git/bin/bash.exe'
             if candidate.exists(): bash = str(candidate)
         if not bash: self.skipTest('POSIX shell unavailable')
-        script = rooted.CUSTOMIZE_SH.replace('/data/adb/modules/pgrazor/', './live/')
+        script = rooted.CUSTOMIZE_SH.replace('/data/adb/modules/pgsavant', './live')
         prefix = 'MODPATH=./staged; ui_print(){ :; }; abort(){ echo "$1"; exit 1; }; '
         with tempfile.TemporaryDirectory(prefix='pgrazor-toggle-install-') as tmp:
             work = Path(tmp)
@@ -74,6 +72,9 @@ class ToggleCapabilityTests(unittest.TestCase):
             def run():
                 return subprocess.run([bash, '-c', prefix + script], cwd=tmp,
                                       capture_output=True, text=True, timeout=10)
+            self.assertEqual(run().returncode, 0)
+            self.assertTrue(staged.is_file(), 'a new module must remain Off')
+            (work / 'live/module.prop').write_text('id=pgsavant\n')
             self.assertEqual(run().returncode, 0)
             self.assertFalse(staged.exists())
             live.touch()

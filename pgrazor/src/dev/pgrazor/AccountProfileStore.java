@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
  * <p>The legacy single-account layout is preserved: profile {@code "default"} reads and writes its
  * files directly in {@code filesDir} (and uses unsuffixed SharedPreferences names), so existing
  * installs keep their data in place. Every other profile has a random-UUID id and is scoped under
- * {@code pgrazor-accounts-v1/profiles/<id>/}.
+ * {@code pgsavant-accounts-v1/profiles/<id>/}.
  *
  * <p>All writes are a single atomic, durable transaction: the new index is serialised, flushed to
  * stable storage, and only then moved into place; the in-memory snapshot is replaced only after the
@@ -59,7 +59,7 @@ public final class AccountProfileStore {
     /** Largest index file the loader will accept, as a corruption/foreign-file guard. */
     public static final int MAX_INDEX_BYTES = 128 * 1024;
 
-    private static final String DIR = "pgrazor-accounts-v1";
+    private static final String DIR = "pgsavant-accounts-v1";
     private static final String PROFILES_DIR = "profiles";
     private static final String INDEX_NAME = "index.properties";
     private static final String INDEX_VERSION = "1";

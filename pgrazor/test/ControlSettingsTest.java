@@ -57,7 +57,7 @@ public final class ControlSettingsTest {
         if(args[0].equals("save")) {
             // Read the file directly: this proves the daemon writer drained the newest coalesced snapshot.
             java.util.Properties saved=new java.util.Properties();
-            try(java.io.FileInputStream in=new java.io.FileInputStream(new java.io.File(args[1],"pgrazor-settings-v1.properties"))){saved.load(in);}
+            try(java.io.FileInputStream in=new java.io.FileInputStream(new java.io.File(args[1],"pgsavant-settings-v1.properties"))){saved.load(in);}
             if(!"981".equals(saved.getProperty("battleOptions"))||!"705".equals(saved.getProperty("berryPriority"))||!"5".equals(saved.getProperty("rocketOptions"))||!"true".equals(saved.getProperty("gymRepeatEnabled")))
                 throw new AssertionError("Queued settings were not flushed to disk before exit");
         }

@@ -47,8 +47,8 @@ import javax.crypto.spec.GCMParameterSpec;
  * third-party libraries, no runtime permissions, Java 8 / Android API 28 compatible.
  */
 final class AccountSessionVault {
-    private static final String DIR = "pgrazor-account-sessions-v1";
-    private static final String KEY_ALIAS = "pgrazor-account-sessions-v1";
+    private static final String DIR = "pgsavant-account-sessions-v1";
+    private static final String KEY_ALIAS = "pgsavant-account-sessions-v1";
     private static final String KEYSTORE = "AndroidKeyStore";
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
     private static final String FILE_SUFFIX = ".bin";
@@ -211,7 +211,7 @@ final class AccountSessionVault {
 
     /** AAD binds the envelope version and profile id so blobs cannot be swapped between profiles. */
     private static byte[] aad(String id) {
-        return ("pgrazor-account-sessions-v" + FORMAT_VERSION + ":" + id).getBytes(StandardCharsets.UTF_8);
+        return ("pgsavant-account-sessions-v" + FORMAT_VERSION + ":" + id).getBytes(StandardCharsets.UTF_8);
     }
 
     private static byte[] wrap(byte[] iv, byte[] ciphertext) throws IOException {
