@@ -16,9 +16,11 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <jni.h>
+#include <poll.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "zygisk.hpp"
@@ -32,6 +34,32 @@ namespace {
 
 constexpr const char *kPackage = "com.nianticlabs.pokemongo";
 constexpr size_t kMaxBlob = 256u << 20;
+
+// Zygote cannot reliably inspect /data/adb/modules under SELinux. Only the
+// registered root companion evaluates the fixed paths; no caller paths or
+// commands are accepted. Missing/invalid IPC results keep injection disabled.
+void coexistence_companion(int client) {
+    const unsigned char allowed = pgsavant::original_allows_injection([](const char *path) {
+        struct stat st{};
+        if (lstat(path, &st) != 0)
+            return errno == ENOENT ? pgsavant::PathState::missing : pgsavant::PathState::unknown;
+        if (S_ISREG(st.st_mode)) return pgsavant::PathState::file;
+        if (S_ISDIR(st.st_mode)) return pgsavant::PathState::directory;
+        return pgsavant::PathState::unknown;
+    }) ? 1 : 0;
+    send(client, &allowed, sizeof allowed, MSG_NOSIGNAL);
+}
+
+bool original_allows_injection(zygisk::Api *api) {
+    int client = api->connectCompanion();
+    if (client < 0) return false;
+    pollfd ready{client, POLLIN, 0};
+    unsigned char allowed = 0;
+    const bool result = poll(&ready, 1, 1500) == 1 && (ready.revents & POLLIN) &&
+        recv(client, &allowed, sizeof allowed, MSG_DONTWAIT) == sizeof allowed && allowed == 1;
+    close(client);
+    return result;
+}
 
 struct Blob {
     unsigned char *data = nullptr;
@@ -114,14 +142,7 @@ public:
             target_ = false;
             return;
         }
-        if (!pgsavant::original_allows_injection([](const char *path) {
-            struct stat st{};
-            if (lstat(path, &st) != 0)
-                return errno == ENOENT ? pgsavant::PathState::missing : pgsavant::PathState::unknown;
-            if (S_ISREG(st.st_mode)) return pgsavant::PathState::file;
-            if (S_ISDIR(st.st_mode)) return pgsavant::PathState::directory;
-            return pgsavant::PathState::unknown;
-        })) {
+        if (!original_allows_injection(api_)) {
             LOGE("Original PGRazor is On or its state is unknown; PGSavant stays off");
             target_ = false;
             return;
@@ -192,3 +213,4 @@ private:
 }  // namespace
 
 REGISTER_ZYGISK_MODULE(Loader)
+REGISTER_ZYGISK_COMPANION(coexistence_companion)
