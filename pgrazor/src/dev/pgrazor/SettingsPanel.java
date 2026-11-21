@@ -99,6 +99,7 @@ final class SettingsPanel {
     private final CheckBox[] giftChoices=new CheckBox[3];
     private final CheckBox[] quickMenuChoices=new CheckBox[QuickMenu.CUSTOMIZABLE.length];
     private final CheckBox[] rocketChoices=new CheckBox[3];
+    private CheckBox rocketPvp;
     private final CheckBox[] battleChoices=new CheckBox[10];
     private Runnable buddyRefresh=()->{},smartRefresh=()->{};
     // Groups gated by backend readiness (catch-summary support, ball-animation support), refreshed without
@@ -662,7 +663,11 @@ final class SettingsPanel {
         String[] rocketLabels={"Auto quick attack","Auto charged attack","Auto shield"};
         for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(rocketLabels[i]);box.setChecked((Control.rocketOptions()&bit)!=0);rocketChoices[i]=box;rocketC.addView(box);
             box.setOnClickListener(v->Control.setRocketOptions(box.isChecked()?Control.rocketOptions()|bit:Control.rocketOptions()&~bit));}
-        caption(rocketC, "While any of these is on, the next Pokémon is picked automatically when one faints.");
+        rocketPvp=new CheckBox(activity);rocketPvp.setText("Also use in PvP");
+        rocketPvp.setChecked((Control.rocketOptions()&8)!=0);rocketC.addView(rocketPvp);
+        rocketPvp.setOnClickListener(v->Control.setRocketOptions(rocketPvp.isChecked()?Control.rocketOptions()|8:Control.rocketOptions()&~8));
+        caption(rocketC, "PvP uses the same quick attack, charged attack and shield choices. Without Coach control, charged attacks use the first ready move and shields are used when prompted.");
+        caption(rocketC, "In Rocket battles, while any attack option is on, the next Pokémon is picked automatically when one faints.");
         rocketStatus = caption(rocketC, "");
 
         LinearLayout gymC = group(battleC, "Gyms");
@@ -864,7 +869,7 @@ final class SettingsPanel {
         summary(1,active("Quick catch",Control.quickSummaryEnabled(),"Auto throw",Control.autoThrow(),"Auto ball",Control.autoBall(),"Curveball",Control.throwCurve(),"Always hit",Control.throwAlwaysHit(),"Berries",Control.encounterBerryEnabled()));
         summary(2,active("Auto-transfer",Control.autoTransferEnabled(),"Evolve first",Control.autoTransferEnabled()&&Control.evolveTransferEnabled(),"IVs shown",Control.ivCatchMode()!=0||Control.ivOwnedMode()!=0||Control.storageIvMode()!=0));
         summary(3,active("Go Plus overlay",Control.vgpOverlay(),"Quick spin",Control.quickSpinEnabled(),"Item cleanup",Control.itemTransferEnabled()));
-        summary(4,active("Smart battling",Control.smartBattle(),"Smart healing",Control.healEnabled(),"Auto attacks",Control.battleOptions()!=0||Control.rocketOptions()!=0,"Gym repeat",Control.gymRepeatEnabled()));
+        summary(4,active("Smart battling",Control.smartBattle(),"Smart healing",Control.healEnabled(),"Auto attacks",Control.battleOptions()!=0||(Control.rocketOptions()&7)!=0,"Gym repeat",Control.gymRepeatEnabled()));
         summary(5,active("Buddy engine",BuddyEmotionSettings.enabled(),"Auto incubate",Control.autoIncubate(),"Open gifts",(Control.giftOptions()&1)!=0,"Send gifts",(Control.giftOptions()&2)!=0));
         summary(6,AutoRaid.running()?"Auto-Raid running":ShundoSniper.active()?"Shundo Sniper running":ShinyScanner.enabled()?"Shiny Scanner on":"Shundo, shiny scan, raids, incense, gym feeding, gifts, evolve, research");
         summary(7,"Halloween · Go Wild");
@@ -1245,7 +1250,7 @@ final class SettingsPanel {
     }
 
     private void refreshRocket() {
-        for(int i=0;i<3;i++)rocketChoices[i].setChecked((Control.rocketOptions()&(1<<i))!=0);status(rocketStatus,Control.rocketStatus());
+        for(int i=0;i<3;i++)rocketChoices[i].setChecked((Control.rocketOptions()&(1<<i))!=0);rocketPvp.setChecked((Control.rocketOptions()&8)!=0);status(rocketStatus,Control.rocketStatus());
     }
 
     private void refreshItems() {

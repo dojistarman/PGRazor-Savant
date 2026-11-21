@@ -69,7 +69,8 @@ enum PgrRocketCombatObserve {
   PGR_RC_OBS_CHARGE        = 6,  // obj=ChargeAttackDisplayVNext; prune/dedupe/append (<=4)
   PGR_RC_OBS_SHIELD_PROMPT = 7,  // obj=ShieldModalGuiController, aux=prompt bool; open shield
   PGR_RC_OBS_SHIELD_MANUAL = 8,  // obj=shield modal (ShieldUiClicked); mark used + notify 20
-  PGR_RC_OBS_SHIELD_CLOSE  = 9   // obj=shield modal (HandleDismiss); drop shield by identity
+  PGR_RC_OBS_SHIELD_CLOSE  = 9,  // obj=shield modal (HandleDismiss); drop shield by identity
+  PGR_RC_OBS_PVP_ENTER     = 10  // obj=VsSeekerCombatState; same controller, opt-in mask bit 8
 };
 
 // Table status codes. 0 == success.
@@ -121,7 +122,7 @@ enum PgrRocketCombatGate {
   PGR_RC_GATE_VN_ACTIVE  = 7   // "vnext-active"
 };
 
-// Install-time configuration (fixed LP64 layout, 344 bytes). Every pointer is an already-validated
+// Install-time configuration (fixed LP64 layout, 352 bytes). Every required pointer is an already-validated
 // il2cpp export / MethodInfo* / FieldInfo* / Il2CppClass*; the native layer re-checks and rejects
 // any null. See the static_asserts in rocket_combat.cpp for the authoritative offsets/sizes.
 typedef struct pgr_rocket_combat_config_v1 {
@@ -188,7 +189,8 @@ typedef struct pgr_rocket_combat_config_v1 {
   uint32_t reserved0;    // must be 0                                                332
   uint32_t reserved1;    // must be 0                                                336
   uint32_t reserved2;    // must be 0                                                340
-} pgr_rocket_combat_config_v1;  // 344 bytes
+  void *class_pvp;       // optional exact VsSeekerCombatState identity             344
+} pgr_rocket_combat_config_v1;  // 352 bytes
 
 // Pull-only telemetry snapshot (64 bytes). Safe from any thread; never frees. The adapter builds
 // its rocketState facade (state truthiness + failed, for the battle-19 mutual-exclusion gate and
@@ -207,7 +209,7 @@ typedef struct pgr_rocket_combat_sample_v1 {
   uint32_t fault_serial;  // bumped on each managed-invoke fault
   uint32_t dropped_events;// FIFO overflow count (fail-closed: blocks new actions until drained)
   uint32_t owned_roots;   // durable GC roots + active frames (coordinator finish guard; nonzero in cleanup)
-  uint32_t reserved;      // 0
+  uint32_t pvp_scope;     // held scope is VsSeeker (1), Rocket/absent (0)
 } pgr_rocket_combat_sample_v1;
 
 // Bounded-FIFO event record (16 bytes). Drained in strict order by next_event().

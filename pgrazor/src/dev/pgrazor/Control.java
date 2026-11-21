@@ -353,7 +353,7 @@ public final class Control {
     private static volatile String rocketStatus="Waiting for battle support";
     public static int rocketOptions(){return rocketOptions;}
     public static String rocketStatus(){return rocketStatus;}
-    public static void setRocketOptions(int value){if(value<0||value>7)return;rocketOptions=value;saveSettings();event("rocket-options",String.valueOf(value));}
+    public static void setRocketOptions(int value){if(value<0||value>15)return;rocketOptions=value;saveSettings();event("rocket-options",String.valueOf(value));}
     public static void setRocketReady(boolean ready,String status){rocketReady=ready;rocketStatus=status;}
     public static void setRocketStatus(String status){rocketStatus=status;}
     public static boolean rocketAllowed(){return rocketReady&&quickSummaryReady()&&hostLive();}
@@ -1242,7 +1242,7 @@ public final class Control {
                 if(battleOptions<0||battleOptions>1023)battleOptions=0;
                 gymRepeatEnabled=Boolean.parseBoolean(p.getProperty("gymRepeatEnabled","false"));
                 try{rocketOptions=Integer.parseInt(p.getProperty("rocketOptions","0"));}catch(NumberFormatException ignored){rocketOptions=0;}
-                if(rocketOptions<0||rocketOptions>7)rocketOptions=0;
+                if(rocketOptions<0||rocketOptions>15)rocketOptions=0;
                 itemTransferEnabled=Boolean.parseBoolean(p.getProperty("itemTransfer","false"));
                 itemRules=p.getProperty("itemRules","");itemLimits=p.getProperty("itemLimits","");itemCatalog=p.getProperty("itemCatalog","");
                 if(!validItemRules(itemRules)||!validItemRules(itemLimits)){itemTransferEnabled=false;itemRules="";itemLimits="";}

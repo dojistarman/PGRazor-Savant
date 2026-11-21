@@ -32,7 +32,7 @@
 #include <mutex>
 #include <unistd.h>
 
-static_assert(sizeof(pgr_rocket_combat_config_v1) == 344, "config must be 344 bytes");
+static_assert(sizeof(pgr_rocket_combat_config_v1) == 352, "config must be 352 bytes");
 static_assert(sizeof(pgr_rocket_combat_sample_v1) == 64, "sample must be 64 bytes");
 static_assert(sizeof(pgr_rocket_combat_event_v1) == 16, "event must be 16 bytes");
 static_assert(sizeof(pgr_rocket_combat_api_v1) == 72, "table must be 72 bytes");
@@ -84,6 +84,7 @@ std::atomic<uint32_t> g_active_frames{0};
 // Fail-closed telemetry latch: set when the bounded FIFO drops an event; while set it BLOCKS every
 // new action. Cleared once the FIFO drains empty again.
 std::atomic<bool> g_actions_locked{false};
+std::atomic<bool> g_pvp_published{false};
 
 // Stop request: set (mask disarmed + feature 20 stopped) immediately on any tick(stopping != 0),
 // even a nested one; drained (rocketClear) on the OUTERMOST frame. NOT terminal.
@@ -98,6 +99,7 @@ uint32_t                      g_fifo_head = 0, g_fifo_tail = 0, g_fifo_size = 0;
 uint64_t g_epoch = 0;        // bumped on every clear/enter/exit; cancels straddling actions
 bool     g_in_tick = false;  // non-reentrant tick body guard (observe/begin_ui/end_ui are NOT gated)
 void    *g_state_handle = nullptr;   // InvasionCombatState scope
+bool     g_scope_pvp = false;       // exact VsSeeker scope; requires opt-in bit 8
 void    *g_ui_handle = nullptr;      // legacy CombatUI
 void    *g_vui_handle = nullptr;     // vNext gui
 void    *g_shield_handle = nullptr;  // shield modal
@@ -204,6 +206,7 @@ struct Root {
 
 // --- durable-root accounting + publication ------------------------------------------
 void refresh() {
+  g_pvp_published.store(g_scope_pvp, std::memory_order_release);
   uint32_t n = 0;
   if (g_state_handle) ++n;
   if (g_ui_handle) ++n;
@@ -256,6 +259,7 @@ void drop_shield(uint64_t tid) {
 // callback-capable free, reset flags/gate, bump the scope epoch (invalidating in-flight actions and
 // any pending UI token).
 void rocket_clear(uint64_t tid) {
+  g_scope_pvp = false;
   pol_observe(PGR_ROCKET_EXIT, tid);
   void *old[5 + PGR_RC_MAX_CHARGES]; uint32_t n = 0;
   if (g_state_handle) old[n++] = g_state_handle;
@@ -370,12 +374,12 @@ int api_update(uint32_t mask, uint64_t lease_ms, uint64_t proven_tid) {
     pol_update(0, 0, proven_tid);  // feature 20 disarms on foreign / zero tid too
     return wrong_thread ? PGR_RC_ERR_NULL_ARG : PGR_RC_OK;
   }
-  const uint32_t bits = mask & 7u;
+  const uint32_t bits = mask & 15u;
   const uint64_t clamped = lease_ms > kMaxLeaseMs ? kMaxLeaseMs : lease_ms;
   const uint64_t now = boottime_ms();
   g_mask.store(bits, std::memory_order_release);
   g_lease_until_ms.store((clamped && now) ? now + clamped : 0, std::memory_order_release);
-  pol_update(bits, lease_ms, proven_tid);  // feature 20 clamps the lease itself
+  pol_update(bits & 7u, lease_ms, proven_tid);  // feature 20 owns action bits only
   return PGR_RC_OK;
 }
 
@@ -386,23 +390,25 @@ int api_update(uint32_t mask, uint64_t lease_ms, uint64_t proven_tid) {
 int api_observe(uint32_t kind,void *obj,int32_t aux,uint64_t tid){
   if(!g_installed.load()||!on_unity(tid)||g_stop_requested.load())return PGR_RC_OK;
   FrameGuard guard;const uint64_t epoch=++g_epoch;cancel_inflight(tid);
-  const bool capture=kind==PGR_RC_OBS_SCOPE_ENTER||kind==PGR_RC_OBS_UI_UPDATE||
+  const bool scope_enter=kind==PGR_RC_OBS_SCOPE_ENTER||kind==PGR_RC_OBS_PVP_ENTER;
+  const bool capture=scope_enter||kind==PGR_RC_OBS_UI_UPDATE||
     kind==PGR_RC_OBS_VNEXT_UPDATE||kind==PGR_RC_OBS_SHIELD_PROMPT;
-  void *klass=kind==PGR_RC_OBS_SCOPE_ENTER?g_cfg.class_rocket:
+  void *klass=scope_enter?(kind==PGR_RC_OBS_PVP_ENTER?g_cfg.class_pvp:g_cfg.class_rocket):
     kind==PGR_RC_OBS_UI_UPDATE?g_cfg.class_rui:
     kind==PGR_RC_OBS_VNEXT_UPDATE?g_cfg.class_rvui:g_cfg.class_rshield;
   bool err=false;Root incoming;
   if(capture){
-    if((kind!=PGR_RC_OBS_SCOPE_ENTER&&!g_state_handle)||!exact(obj,klass)||stale(epoch))return PGR_RC_OK;
+    if((!scope_enter&&!g_state_handle)||!klass||!exact(obj,klass)||stale(epoch))return PGR_RC_OK;
     incoming.acquire(obj,&err);if(stale(epoch))return PGR_RC_OK;
     if(err){fault(tid);return PGR_RC_OK;}
   }
   switch(kind){
-    case PGR_RC_OBS_SCOPE_ENTER:{
+    case PGR_RC_OBS_SCOPE_ENTER:
+    case PGR_RC_OBS_PVP_ENTER:{
       rocket_clear(tid);
       if(stale(epoch+1))break;
-      g_state_handle=incoming.release();pol_observe(PGR_ROCKET_ENTER,tid);
-      g_scope_serial.fetch_add(1);refresh();push_event(PGR_RC_EVT_SCOPE,0,1);break;
+      g_state_handle=incoming.release();g_scope_pvp=kind==PGR_RC_OBS_PVP_ENTER;pol_observe(PGR_ROCKET_ENTER,tid);
+      g_scope_serial.fetch_add(1);refresh();push_event(PGR_RC_EVT_SCOPE,g_scope_pvp?1:0,1);break;
     }
     case PGR_RC_OBS_SCOPE_EXIT:{
       void *cur=gc_target(g_state_handle);if(stale(epoch))break;
@@ -489,6 +495,7 @@ int api_end_ui(uint64_t token,void *,uint64_t tid){
 // Lightweight feature-21 gate before each action (feature 20 claim() re-checks authoritatively).
 bool final_ok(uint64_t epoch) {
   if (stale(epoch) || g_failed || !g_state_handle) return false;
+  if (g_scope_pvp && !(g_mask.load(std::memory_order_acquire) & 8u)) return false;
   if (g_actions_locked.load(std::memory_order_acquire)) return false;
   const uint64_t now = boottime_ms();
   const uint64_t lease = g_lease_until_ms.load(std::memory_order_acquire);
@@ -580,7 +587,7 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
 void tick_body(uint64_t tid, uint64_t now) {
   const uint32_t mask = g_mask.load(std::memory_order_acquire);
   const uint64_t lease = g_lease_until_ms.load(std::memory_order_acquire);
-  if (g_failed || !g_state_handle || mask == 0 || now == 0 || now >= lease) return;
+  if (g_failed || !g_state_handle || !(mask & 7u) || (g_scope_pvp && !(mask & 8u)) || now == 0 || now >= lease) return;
   if (g_actions_locked.load(std::memory_order_acquire)) return;
 
   const uint64_t epoch = g_epoch;
@@ -589,7 +596,7 @@ void tick_body(uint64_t tid, uint64_t now) {
   bool err = false;
 
   void *scope=gc_target(g_state_handle);if(stale(epoch))return;
-  const bool scope_ok=exact(scope,g_cfg.class_rocket);if(stale(epoch))return;
+  const bool scope_ok=exact(scope,g_scope_pvp?g_cfg.class_pvp:g_cfg.class_rocket);if(stale(epoch))return;
   if(!scope_ok){rocket_clear(tid);return;}
 
   // (1) shield first.
@@ -741,7 +748,9 @@ int api_sample(pgr_rocket_combat_sample_v1 *out) {
   if (out == nullptr) return PGR_RC_ERR_NULL_ARG;
   out->version = PGR_RC_API_VERSION;
   out->size = sizeof(pgr_rocket_combat_sample_v1);
-  out->scope_active = g_scope_active.load(std::memory_order_acquire);
+  out->scope_active = g_scope_active.load(std::memory_order_acquire) &&
+      (!g_pvp_published.load(std::memory_order_acquire) || (g_mask.load(std::memory_order_acquire) & 8u));
+  out->pvp_scope = g_pvp_published.load(std::memory_order_acquire) ? 1u : 0u;
   out->failed = g_failed_pub.load(std::memory_order_acquire);
   out->ui_active = g_ui_pub.load(std::memory_order_acquire);
   out->charges = g_charges_pub.load(std::memory_order_acquire);
@@ -754,7 +763,6 @@ int api_sample(pgr_rocket_combat_sample_v1 *out) {
   // Conservative finish guard: durable GC handles + owner-thread reentrancy depth (upper bound).
   out->owned_roots = g_durable_roots.load(std::memory_order_acquire) +
                      g_active_frames.load(std::memory_order_acquire);
-  out->reserved = 0;
   return PGR_RC_OK;
 }
 

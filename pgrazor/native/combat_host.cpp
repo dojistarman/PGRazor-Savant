@@ -107,7 +107,9 @@ enum HookSlot : unsigned {
     HK_GYM_NEXT_PRESS = 42,
     HK_GYM_NEXT_LEAVE = 43,
     HK_GYM_NEXT_DISMISS = 44,
-    HK_COUNT           = 45
+    HK_PVP_ENTER       = 45,
+    HK_PVP_EXIT        = 46,
+    HK_COUNT           = 47
 };
 
 constexpr size_t kEventCap     = 256;
@@ -378,7 +380,7 @@ void drain_leaf_events(uint64_t tid) {
                 case PGR_RC_EVT_SCOPE:
                     std::snprintf(buf, sizeof(buf), "{\"active\":%s}", rev.aux ? "true" : "false");
                     queue_event(PGR_CBH_EV_ROCKET_SCOPE, rev.aux ? 1 : 0, 0, tid, buf);
-                    transport_text_action(47, rev.aux ? "Rocket battle active" : "Ready");
+                    transport_text_action(47, rev.aux ? (rev.id==1?"PvP battle active":"Rocket battle active") : "Ready");
                     break;
                 case PGR_RC_EVT_UI:
                     std::snprintf(buf, sizeof(buf), "{\"source\":\"%s\"}",
@@ -587,6 +589,22 @@ void hook_rk_exit(void *self,void *method){
  if(pins.valid&&rocket_gate(&tid)){g_rocket_combat->observe(PGR_RC_OBS_SCOPE_EXIT,pins.get(0),0,tid);
   pgr_rocket_combat_sample_v1 sample{};if(g_rocket_mini&&g_rocket_combat->sample(&sample)==0&&!sample.scope_active){g_rocket_mini->restore();g_mini_active.store(0);}
   drain_leaf_events(tid);}orig(pins.get(0),method);
+}
+void hook_pvp_enter(void *self,void *a1,void *a2,void *method){
+ auto orig=reinterpret_cast<Fn4Ptr>(load_original(HK_PVP_ENTER));FrameGuard frame;uint64_t tid=0;
+ if(!rocket_gate(&tid)){orig(self,a1,a2,method);return;}PinnedArgs pins{self,a1,a2};
+ if(pins.valid&&rocket_gate(&tid)){
+  g_rocket_combat->observe(PGR_RC_OBS_PVP_ENTER,pins.get(0),0,tid);
+  if(g_rocket_mini)g_rocket_mini->restore();sync_minigame_policy(now_ms());drain_leaf_events(tid);
+ }orig(pins.get(0),pins.get(1),pins.get(2),method);
+}
+void hook_pvp_exit(void *self,void *method){
+ auto orig=reinterpret_cast<Fn2Ptr>(load_original(HK_PVP_EXIT));FrameGuard frame;uint64_t tid=0;
+ if(!rocket_gate(&tid)){orig(self,method);return;}PinnedArgs pins{self};
+ if(pins.valid&&rocket_gate(&tid)){
+  g_rocket_combat->observe(PGR_RC_OBS_SCOPE_EXIT,pins.get(0),0,tid);
+  if(g_rocket_mini)g_rocket_mini->restore();g_mini_active.store(0);drain_leaf_events(tid);
+ }orig(pins.get(0),method);
 }
 void hook_rk_ui_update(void *self,uint8_t a1, void *method){
  auto orig=reinterpret_cast<FnPtrBoolPtr>(load_original(HK_RK_UI_UPDATE));FrameGuard frame;uint64_t tid=0;
@@ -856,6 +874,38 @@ bool configure_and_install_rocket(uint64_t tid) {
         return false;
     }
 
+    // Reuse the verified shared combat UI handlers, adding only the PvP lifecycle.
+    // Resolve current-client metadata by exact class and method signature; no Coach
+    // field offsets or previous-version native addresses are used here.
+    void *pvp_class=nullptr,*pvp_enter=nullptr,*pvp_exit=nullptr;
+    const auto *meta=api_table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
+    const auto *boot=api_table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));
+    PgrBootBinding binding{};
+    if(meta&&boot&&boot->snapshot(&binding)==0&&binding.meta.debug_get_method_info){
+        PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);
+        q.name_space="Niantic.Holoholo.Combat.Contexts";q.name="VsSeekerCombatState";q.canonical_match=PGR_MD_MATCH_EXACT;
+        PgrMetaClassResult c{};
+        if(meta->resolve_class(&q,&c)==0){
+            auto lifecycle=[&](const char *name,uint32_t count)->void*{
+                PgrMetaMethodQuery m{};m.version=1;m.size=sizeof(m);m.owner=c.klass;m.name=name;
+                m.return_type="System.Void";m.return_match=PGR_MD_MATCH_EXACT;m.param_count=count;
+                m.param_types[0]="Niantic.Platform.GameStates.StateLogic.IStateApi";
+                m.param_types[1]="Niantic.Holoholo.Combat.Contexts.VsSeekerCombatState.Data";
+                m.param_match[0]=m.param_match[1]=PGR_MD_MATCH_EXACT;
+                PgrMetaMethodResult result{};if(meta->validate_method(&m,&result)!=0)return nullptr;
+                void *info[3]{};auto debug=reinterpret_cast<bool(*)(const void*,void*)>(binding.meta.debug_get_method_info);
+                if(!debug(result.method,info)||!info[0])return nullptr;
+                PgrMetaCodeQuery code{};code.version=1;code.size=sizeof(code);code.address=info[0];code.length=16;
+                if(meta->validate_code(&code)!=0)return nullptr;
+                // A short return/tail stub cannot safely own an inline patch.
+                for(unsigned i=0;i<4;++i){uint32_t insn=0;std::memcpy(&insn,static_cast<char*>(info[0])+i*4,4);
+                    if((insn&0xfffffc1fu)==0xd65f0000u||(insn&0xfc000000u)==0x14000000u)return nullptr;}
+                return info[0];
+            };
+            pvp_enter=lifecycle("EnterState",2);pvp_exit=lifecycle("ExitState",0);
+            if(pvp_enter&&pvp_exit)pvp_class=const_cast<void*>(c.klass);
+        }
+    }
     pgr_rocket_combat_config_v1 rc_cfg{};
     rc_cfg.version          = 1;
     rc_cfg.size             = sizeof(rc_cfg);
@@ -902,6 +952,7 @@ bool configure_and_install_rocket(uint64_t tid) {
     rc_cfg.class_rvgest     = md_k(OC_RVGEST);
     rc_cfg.class_rvcharge   = md_k(OC_RVCHARGE);
     rc_cfg.class_bool       = md_c(6);
+    rc_cfg.class_pvp        = pvp_class;
     rc_cfg.state_open       = PGR_CBH_STATE_OPEN;
 
     if (g_rocket_combat->install(&rc_cfg) != PGR_RC_OK) {
@@ -926,6 +977,14 @@ bool configure_and_install_rocket(uint64_t tid) {
     if (!install_shared_vnext_hook()) {
         return false;
     }
+    bool pvp_ready=false;
+    if(pvp_class){const HookEntry entries[]={
+        {HK_PVP_ENTER,pvp_enter,reinterpret_cast<void*>(hook_pvp_enter)},
+        {HK_PVP_EXIT,pvp_exit,reinterpret_cast<void*>(hook_pvp_exit)}};
+        pvp_ready=install_hook_group(entries,2);
+    }
+    queue_event(PGR_CBH_EV_ROCKET_COMBAT_READY,pvp_ready?1:0,0,tid,
+        pvp_ready?"{\"pvpAvailable\":true}":"{\"pvpAvailable\":false,\"reason\":\"PvP lifecycle binding unavailable\"}");
 
     // Configure & install Feature 6 (Rocket Particle Minigame) if available.
     g_rocket_mini = api_table<PgrRocketMiniApi>(pgrazor_rocket_minigame_api(1));

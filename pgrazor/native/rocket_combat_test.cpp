@@ -49,7 +49,7 @@ int m_director, m_active, m_fast, m_charge, m_visible, m_interactable, m_shield;
 int vm_blocked, vm_charged, vm_visible, vm_charge, vm_fast, m_alive;
 int f_first, f_second, f_charged, f_input, f_shields, f_button;
 int vf_gesture, vf_enabled, vf_tap, vf_button, f_current_state;
-int c_rocket, c_rui, c_rdir, c_rcharge, c_rshield, c_rvui, c_rvgest, c_rvcharge, c_bool, c_sel, c_tap;
+int c_rocket, c_pvp, c_rui, c_rdir, c_rcharge, c_rshield, c_rvui, c_rvgest, c_rvcharge, c_bool, c_sel, c_tap;
 
 struct Obj {
   void   *klass = nullptr;
@@ -183,6 +183,7 @@ void fill_config(pgr_rocket_combat_config_v1 *c) {
   c->class_rocket = &c_rocket; c->class_rui = &c_rui; c->class_rdir = &c_rdir; c->class_rcharge = &c_rcharge;
   c->class_rshield = &c_rshield; c->class_rvui = &c_rvui; c->class_rvgest = &c_rvgest;
   c->class_rvcharge = &c_rvcharge; c->class_bool = &c_bool;
+  c->class_pvp = &c_pvp;
   c->state_open = 2;
 }
 
@@ -556,13 +557,37 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_SCOPE_EXIT,&sc.scope2,0,tid);
       break;
     }
+    case 27: case 28: case 29: case 30: case 31: {
+      sc.scope.klass=&c_pvp;
+      uint32_t mask=n==28||n==31?9:n==29?10:n==30?12:7;
+      api->update(mask,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_ENTER,&sc.scope,0,tid);api->update(mask,2500,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      if(n==27||n==29)api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,0,tid);
+      if(n==27||n==30)api->observe(PGR_RC_OBS_SHIELD_PROMPT,&sc.shield,1,tid);
+      if(n==31)api->update(1,2500,tid);
+      api->tick(tid,0);
+      if(n==27||n==31){if(sc.vgest.tapped||sc.vcharge.tapped||sc.shield.shieldClicked||scope_now())return 61;}
+      if(n==28&&sc.vgest.tapped!=1)return 62;
+      if(n==29&&sc.vcharge.tapped!=1)return 63;
+      if(n==30&&sc.shield.shieldClicked!=1)return 64;
+      if(n==31){api->update(9,2500,tid);api->tick(tid,0);if(sc.vgest.tapped!=1)return 65;}
+      api->observe(PGR_RC_OBS_SCOPE_EXIT,&sc.scope,0,tid);
+      if(roots_now()||scope_now())return 66;
+      break;
+    }
+    case 32:
+      api->update(15,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_ENTER,&sc.scope,0,tid);
+      if(roots_now()||scope_now())return 67;
+      break;
   }
   g_cb=nullptr;api->tick(tid,1);
   if(roots_now()!=0||g_live!=0||g_bad_free)return 90;
   return 0;
 }
 
-constexpr int kScenarios = 27;
+constexpr int kScenarios = 33;
 
 }  // namespace
 

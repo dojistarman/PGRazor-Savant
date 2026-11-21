@@ -56,13 +56,13 @@ bool configured(){
  int active=0,allowed=0;int32_t options=0;
  if(tr->get_bool(3,&active)||tr->get_bool(26,&allowed)||tr->get_int(6,&options))return false;
  if(tr->sample(&z)||!z.snapshot_fresh||z.snapshot_seq!=a.snapshot_seq)return false;
- return active==1&&allowed==1&&(options>0||pgr_smart_battle_enabled());
+ return active==1&&allowed==1&&((options&7)>0||pgr_smart_battle_enabled());
 }
 bool rocket_battle(){
  auto api=static_cast<const pgr_rocket_combat_api_v1*>(pgrazor_rocket_combat_api(1));
  if(!api||!api->sample)return false;
  pgr_rocket_combat_sample_v1 s{};s.version=PGR_RC_API_VERSION;s.size=sizeof(s);
- return api->sample(&s)==0&&s.scope_active==1;
+ return api->sample(&s)==0&&s.scope_active==1&&s.pvp_scope==0;
 }
 bool gate(){
  const uint64_t tid=owner.load(std::memory_order_acquire);

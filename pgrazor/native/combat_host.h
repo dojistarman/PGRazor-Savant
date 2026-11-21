@@ -34,7 +34,7 @@ enum {
 
     PGR_CBH_MAX_LEASE_MS        = 2500,
     PGR_CBH_BATTLE_MASK_ALL     = 1023,
-    PGR_CBH_ROCKET_MASK_ALL     = 7,
+    PGR_CBH_ROCKET_MASK_ALL     = 15, // 1/2/4 actions; 8 also permits VsSeeker PvP
     PGR_CBH_STATE_OPEN          = 2
 };
 
@@ -132,7 +132,7 @@ struct PgrCombatHostOptions {
     uint32_t size;             // 4: sizeof(PgrCombatHostOptions) == 48
     uint32_t flags;            // 8: PgrCombatHostOptionFlags
     uint32_t battle_mask;      // 12: 0..1023
-    uint32_t rocket_mask;      // 16: 0..7
+    uint32_t rocket_mask;      // 16: 0..15 (bit 8 opts into PvP)
     uint32_t reserved0;        // 20: 0
     uint64_t battle_lease_ms;  // 24: clamped to <= 2500ms
     uint64_t rocket_lease_ms;  // 32: clamped to <= 2500ms
