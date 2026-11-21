@@ -1,3 +1,11 @@
+# PGSavant (Root)
+
+PGSavant is an experimental Root-only PGRazor derivative. Under **Battles → Team Rocket**, **Also use in PvP** applies the existing quick-attack, charged-attack and shield options to PvP. Charged attacks use the first ready move; shields are used when prompted. Pokémon selection remains manual. Coach-driven decisions are not connected yet.
+
+The installer uses application ID `com.arevj.pgsavant` and module ID `pgsavant`. Follow the [installer guide](pgrazor/root-installer/README.md) for installation and selecting one runtime at a time. Retain upstream and third-party licence notices.
+
+The upstream documentation follows.
+
 <p align="center"><img src="pgrazor/branding/pgrazor.svg" width="88" alt="PGRazor logo"></p>
 <h1 align="center">PGRazor</h1>
 <p align="center">A compact Android interface for location controls and Pokémon GO automation.</p>
